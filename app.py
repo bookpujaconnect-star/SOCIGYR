@@ -192,10 +192,15 @@ def serve_soc_dashboard():
 
 @app.route('/health')
 @app.route('/soc/health')
+@app.route('/api/health')
 def health_probe():
+    control = get_website_control_doc()
     return jsonify({
-        "service": "IGYR Independent SOC Centre",
         "status": "healthy",
+        "service": "IGYR Security Operations Centre (SOC)",
+        "role": "cybersecurity_and_system_command",
+        "website_master_switch": "ONLINE" if bool(control.get("website_active", True)) else "MAINTENANCE",
+        "database": "Connected" if db is not None else "Local / Disconnected",
         "timestamp": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
     }), 200
 
