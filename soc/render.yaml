@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: igyr-soc-server
+    env: python
+    region: oregon
+    plan: free
+    branch: main
+    rootDir: soc
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.9.16
+      - key: MONGO_URI
+        sync: false
+      - key: SOC_USER
+        value: igyr
+      - key: SOC_PASSWORD
+        value: cutiee
+      - key: MAIN_SERVER_URL
+        value: https://igyr-india-get-your-result.onrender.com

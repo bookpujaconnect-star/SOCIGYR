@@ -1,0 +1,1500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IGYR SOC — Security Operations Centre & System Command</title>
+    <meta name="description" content="IGYR Central Security Operations Centre (SOC) - Infrastructure Health, Threat Intelligence, and Platform Traffic Gateway.">
+    <link rel="icon" type="image/png" href="/favicon-96x96.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-body: #070a12;
+            --bg-surface: #0c1222;
+            --bg-card: #111a30;
+            --bg-card-hover: #16223f;
+            --border-subtle: rgba(255, 255, 255, 0.07);
+            --border-bright: rgba(56, 189, 248, 0.3);
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            --text-dark: #64748b;
+            --cyan: #00e5ff;
+            --green: #10b981;
+            --amber: #f59e0b;
+            --red: #ef4444;
+            --purple: #8b5cf6;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Scanline / Grid overlay for high-tech tactical aesthetic */
+        .grid-glow {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at 50% 0%, rgba(0, 229, 255, 0.08) 0%, transparent 60%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* LOGIN OVERLAY MODAL */
+        #login-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(7, 10, 18, 0.95);
+            backdrop-filter: blur(16px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            padding: 20px;
+        }
+
+        .login-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-bright);
+            border-radius: 20px;
+            padding: 40px;
+            width: 100%;
+            max-width: 440px;
+            box-shadow: 0 0 50px rgba(0, 229, 255, 0.15);
+            position: relative;
+        }
+
+        .login-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(0, 229, 255, 0.1);
+            border: 1px solid rgba(0, 229, 255, 0.3);
+            color: var(--cyan);
+            font-size: 11px;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+            padding: 4px 10px;
+            border-radius: 6px;
+            margin-bottom: 16px;
+            text-transform: uppercase;
+        }
+
+        .login-title {
+            font-size: 24px;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            color: #ffffff;
+            margin-bottom: 6px;
+        }
+
+        .login-desc {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-bottom: 24px;
+            line-height: 1.5;
+        }
+
+        .form-group {
+            margin-bottom: 18px;
+            text-align: left;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+        }
+
+        .form-input {
+            width: 100%;
+            background: #080d1a;
+            border: 1px solid var(--border-subtle);
+            border-radius: 10px;
+            padding: 12px 16px;
+            color: #ffffff;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--cyan);
+            box-shadow: 0 0 15px rgba(0, 229, 255, 0.2);
+        }
+
+        .btn-soc-primary {
+            width: 100%;
+            background: linear-gradient(135deg, #00e5ff, #0284c7);
+            color: #070a12;
+            border: none;
+            padding: 14px;
+            border-radius: 10px;
+            font-weight: 800;
+            font-size: 14px;
+            letter-spacing: 0.02em;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-soc-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 5px 20px rgba(0, 229, 255, 0.4);
+        }
+
+        .login-error {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: var(--red);
+            font-size: 12px;
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 14px;
+            display: none;
+            text-align: center;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* MAIN APP WRAPPER */
+        #soc-app {
+            display: none;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* HEADER NAVIGATION */
+        .soc-nav {
+            background: rgba(12, 18, 34, 0.85);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border-subtle);
+            padding: 16px 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .nav-brand-box {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .nav-badge-icon {
+            width: 38px;
+            height: 38px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #00e5ff, #3b82f6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #070a12;
+            font-weight: 900;
+            font-size: 18px;
+        }
+
+        .nav-title {
+            font-size: 16px;
+            font-weight: 800;
+            letter-spacing: -0.01em;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .nav-subtitle {
+            font-size: 11px;
+            color: var(--text-dark);
+            font-family: 'JetBrains Mono', monospace;
+            text-transform: uppercase;
+        }
+
+        .nav-right {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .clock-display {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            color: var(--text-muted);
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-subtle);
+            padding: 6px 12px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-dot-green {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--green);
+            box-shadow: 0 0 8px var(--green);
+        }
+
+        .btn-logout {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #fca5a5;
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-logout:hover {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ffffff;
+        }
+
+        /* MAIN CONTENT LAYOUT */
+        .soc-main {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 32px 24px 60px;
+        }
+
+        /* HERO KILL-SWITCH GATEWAY SECTION */
+        .gateway-banner {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: 20px;
+            padding: 28px 32px;
+            margin-bottom: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 24px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .gateway-banner::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            width: 5px;
+            background: var(--green);
+            transition: background 0.3s ease;
+        }
+
+        .gateway-banner.maintenance-mode::before {
+            background: var(--amber);
+        }
+
+        .gateway-info h2 {
+            font-size: 20px;
+            font-weight: 800;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 6px;
+        }
+
+        .gateway-info p {
+            font-size: 13px;
+            color: var(--text-muted);
+            max-width: 600px;
+            line-height: 1.5;
+        }
+
+        .gateway-status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .status-pill-online {
+            background: rgba(16, 185, 129, 0.15);
+            border: 1px solid rgba(16, 185, 129, 0.4);
+            color: var(--green);
+        }
+
+        .status-pill-offline {
+            background: rgba(245, 158, 11, 0.15);
+            border: 1px solid rgba(245, 158, 11, 0.4);
+            color: var(--amber);
+        }
+
+        /* MASTER TOGGLE SWITCH */
+        .switch-container {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            padding: 10px 18px;
+            border-radius: 16px;
+        }
+
+        .switch-label-state {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            font-weight: 700;
+            text-align: right;
+        }
+
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 64px;
+            height: 34px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #334155;
+            transition: .3s;
+            border-radius: 34px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 24px;
+            width: 24px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .3s;
+            border-radius: 50%;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        }
+
+        input:checked + .slider {
+            background-color: var(--green);
+            box-shadow: 0 0 15px rgba(16, 185, 129, 0.4);
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(30px);
+        }
+
+        .gateway-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .btn-edit-maint {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-main);
+            padding: 10px 16px;
+            border-radius: 10px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-edit-maint:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        /* SECTION HEADERS */
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .section-title {
+            font-size: 16px;
+            font-weight: 800;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            letter-spacing: -0.01em;
+        }
+
+        .section-title svg {
+            width: 20px;
+            height: 20px;
+            color: var(--cyan);
+        }
+
+        /* TELEMETRY METRIC CARDS GRID */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 18px;
+            margin-bottom: 36px;
+        }
+
+        .metric-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: 16px;
+            padding: 22px;
+            transition: transform 0.2s ease, border-color 0.2s ease;
+            position: relative;
+        }
+
+        .metric-card:hover {
+            border-color: rgba(0, 229, 255, 0.25);
+            transform: translateY(-2px);
+        }
+
+        .metric-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+
+        .metric-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .metric-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.03);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--cyan);
+        }
+
+        .metric-val {
+            font-size: 28px;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            color: #ffffff;
+            font-family: 'JetBrains Mono', monospace;
+            margin-bottom: 6px;
+        }
+
+        .metric-sub {
+            font-size: 12px;
+            color: var(--text-dark);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .progress-bar-bg {
+            height: 6px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: 12px;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--cyan), var(--green));
+            border-radius: 3px;
+            width: 0%;
+            transition: width 0.6s ease;
+        }
+
+        /* SPLIT TWO-COLUMN SECTION */
+        .soc-split-grid {
+            display: grid;
+            grid-template-columns: 1.4fr 1fr;
+            gap: 24px;
+            margin-bottom: 36px;
+        }
+
+        @media (max-width: 1024px) {
+            .soc-split-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* CYBER SECURITY LOGS / FEED */
+        .terminal-panel {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: 18px;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            height: 520px;
+        }
+
+        .terminal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+            padding-bottom: 14px;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .terminal-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .feed-container {
+            flex: 1;
+            overflow-y: auto;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding-right: 6px;
+        }
+
+        .log-item {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            border-radius: 8px;
+            padding: 10px 14px;
+            transition: all 0.15s ease;
+        }
+
+        .log-item:hover {
+            background: rgba(255, 255, 255, 0.04);
+        }
+
+        .log-meta {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+
+        .log-severity {
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 10px;
+        }
+
+        .sev-CRITICAL { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
+        .sev-HIGH { background: rgba(245, 158, 11, 0.2); color: #f59e0b; }
+        .sev-MEDIUM { background: rgba(0, 229, 255, 0.2); color: #00e5ff; }
+        .sev-INFO { background: rgba(16, 185, 129, 0.2); color: #10b981; }
+
+        .log-ip {
+            color: var(--cyan);
+            font-weight: 600;
+        }
+
+        .log-time {
+            color: var(--text-dark);
+            font-size: 11px;
+        }
+
+        .log-details {
+            color: var(--text-muted);
+            line-height: 1.4;
+            word-break: break-all;
+        }
+
+        /* FIREWALL & QUARANTINE TABLE */
+        .firewall-panel {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: 18px;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            height: 520px;
+        }
+
+        .ban-input-box {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .btn-ban-submit {
+            background: var(--red);
+            color: white;
+            border: none;
+            padding: 0 16px;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 12px;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .firewall-list {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding-right: 6px;
+        }
+
+        .firewall-item {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            padding: 10px 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .firewall-ip-text {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            font-weight: 700;
+            color: #ffffff;
+        }
+
+        .firewall-reason {
+            font-size: 11px;
+            color: var(--text-dark);
+            margin-top: 2px;
+        }
+
+        .btn-unban {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            color: var(--green);
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-unban:hover {
+            background: rgba(16, 185, 129, 0.25);
+        }
+
+        /* RENDER CLUSTER DEPLOYMENT CARD */
+        .render-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: 18px;
+            padding: 24px;
+            margin-bottom: 36px;
+        }
+
+        .render-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-top: 16px;
+        }
+
+        .render-box {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 12px;
+            padding: 16px 20px;
+        }
+
+        .render-box-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: #ffffff;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .render-code {
+            background: #080d1a;
+            border-radius: 6px;
+            padding: 10px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: var(--cyan);
+            overflow-x: auto;
+        }
+
+        /* MODAL FOR EDITING MAINTENANCE NOTICE */
+        #edit-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(7, 10, 18, 0.85);
+            backdrop-filter: blur(8px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 20px;
+        }
+
+        .modal-content {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-bright);
+            border-radius: 18px;
+            padding: 32px;
+            width: 100%;
+            max-width: 520px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+        }
+
+        /* TOAST NOTIFICATIONS */
+        #soc-toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-bright);
+            border-radius: 10px;
+            padding: 14px 20px;
+            color: #ffffff;
+            font-size: 13px;
+            display: none;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            z-index: 9999;
+            font-family: 'JetBrains Mono', monospace;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="grid-glow"></div>
+
+    <!-- LOGIN MODAL SCREEN -->
+    <div id="login-modal">
+        <div class="login-card">
+            <div class="login-badge">
+                <svg width="12" height="12" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 1.944A11.954 11.954 0 012.166 5C2.056 5.649 2 6.319 2 7c0 5.225 3.34 9.67 8 11.317C14.66 16.67 18 12.225 18 7c0-.682-.057-1.35-.166-2.001A11.954 11.954 0 0110 1.944z" clip-rule="evenodd"/></svg>
+                SOC COMMAND ACCESS
+            </div>
+            <h2 class="login-title">Security Operations Centre</h2>
+            <p class="login-desc">Enter your authorized SOC Identity and Access Key to open the platform control deck.</p>
+
+            <form id="soc-login-form" onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label class="form-label" for="login-id">SOC ID (Operator ID)</label>
+                    <input type="text" id="login-id" class="form-input" placeholder="e.g. igyr" required autocomplete="username">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="login-pass">SOC Access Key (Password)</label>
+                    <input type="password" id="login-pass" class="form-input" placeholder="••••••••" required autocomplete="current-password">
+                </div>
+                <button type="submit" class="btn-soc-primary" id="btn-login-submit">
+                    <span>Authenticate SOC Session</span>
+                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                </button>
+            </form>
+
+            <div id="login-error-msg" class="login-error"></div>
+        </div>
+    </div>
+
+    <!-- MAIN SOC APPLICATION -->
+    <div id="soc-app">
+        <!-- TOP NAV -->
+        <header class="soc-nav">
+            <div class="nav-left">
+                <div class="nav-brand-box">
+                    <div class="nav-badge-icon">SOC</div>
+                    <div>
+                        <div class="nav-title">
+                            <span>IGYR SECURITY OPERATIONS CENTRE</span>
+                            <span style="font-size: 11px; background: rgba(0, 229, 255, 0.15); color: var(--cyan); padding: 2px 6px; border-radius: 4px; font-weight: 700;">LIVE v2.4</span>
+                        </div>
+                        <div class="nav-subtitle">CENTRAL INFRASTRUCTURE & CYBER DEFENSE</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="nav-right">
+                <div class="clock-display">
+                    <span class="status-dot-green"></span>
+                    <span id="utc-clock">--:--:-- UTC</span>
+                </div>
+                <button class="btn-logout" onclick="handleLogout()">Sign Out SOC</button>
+            </div>
+        </header>
+
+        <!-- MAIN DECK -->
+        <main class="soc-main">
+
+            <!-- MASTER KILL-SWITCH GATEWAY -->
+            <section class="gateway-banner" id="gateway-banner-box">
+                <div class="gateway-info">
+                    <h2>
+                        <span>Main Platform Traffic Gateway</span>
+                        <span id="gateway-pill" class="gateway-status-pill status-pill-online">ONLINE</span>
+                    </h2>
+                    <p id="gateway-status-desc">
+                        Public requests are actively routed to India Get Your Result platform. Toggle switch OFF to engage immediate Maintenance Mode across all public endpoints.
+                    </p>
+                </div>
+
+                <div class="gateway-actions">
+                    <button class="btn-edit-maint" onclick="openEditModal()">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" style="display:inline; vertical-align:middle; margin-right:4px;"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                        Edit Notice
+                    </button>
+
+                    <div class="switch-container">
+                        <div class="switch-label-state">
+                            <div id="switch-state-text" style="color: var(--green);">SYSTEM ACTIVE</div>
+                            <div style="font-size: 10px; color: var(--text-dark);">PUBLIC ACCESS</div>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="master-website-toggle" onchange="toggleWebsiteMaster(this.checked)">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SERVER HEALTH TELEMETRY -->
+            <div class="section-header">
+                <h3 class="section-title">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                    Server Telemetry & Infrastructure Health
+                </h3>
+                <span id="health-last-updated" style="font-size: 12px; color: var(--text-dark); font-family: 'JetBrains Mono', monospace;">Live Stream</span>
+            </div>
+
+            <div class="metrics-grid">
+                <!-- CPU -->
+                <div class="metric-card">
+                    <div class="metric-top">
+                        <span class="metric-label">CPU Compute</span>
+                        <div class="metric-icon">
+                            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 3v2m6-2v2M9 19v2m6-2v2M3 9h2m-2 6h2m14-6h2m-2 6h2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"/></svg>
+                        </div>
+                    </div>
+                    <div class="metric-val" id="metric-cpu">0.0%</div>
+                    <div class="metric-sub" id="metric-cpu-sub">Process Load Active</div>
+                    <div class="progress-bar-bg">
+                        <div class="progress-bar-fill" id="metric-cpu-bar"></div>
+                    </div>
+                </div>
+
+                <!-- RAM -->
+                <div class="metric-card">
+                    <div class="metric-top">
+                        <span class="metric-label">Memory (RAM)</span>
+                        <div class="metric-icon">
+                            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+                        </div>
+                    </div>
+                    <div class="metric-val" id="metric-ram">0 MB</div>
+                    <div class="metric-sub" id="metric-ram-sub">0% Virtual Allocation</div>
+                    <div class="progress-bar-bg">
+                        <div class="progress-bar-fill" id="metric-ram-bar"></div>
+                    </div>
+                </div>
+
+                <!-- DATABASE -->
+                <div class="metric-card">
+                    <div class="metric-top">
+                        <span class="metric-label">Database Cluster</span>
+                        <div class="metric-icon" style="color: var(--green);">
+                            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"/></svg>
+                        </div>
+                    </div>
+                    <div class="metric-val" id="metric-db-status" style="font-size: 20px; color: var(--green);">CONNECTED</div>
+                    <div class="metric-sub" id="metric-db-sub">Ping Latency: 0 ms</div>
+                    <div class="progress-bar-bg">
+                        <div class="progress-bar-fill" style="width: 100%; background: var(--green);"></div>
+                    </div>
+                </div>
+
+                <!-- UPTIME & RPM -->
+                <div class="metric-card">
+                    <div class="metric-top">
+                        <span class="metric-label">System Uptime</span>
+                        <div class="metric-icon">
+                            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        </div>
+                    </div>
+                    <div class="metric-val" id="metric-uptime" style="font-size: 22px;">0h 0m 0s</div>
+                    <div class="metric-sub" id="metric-traffic-sub">Throughput: 0 Req/Min</div>
+                    <div class="progress-bar-bg">
+                        <div class="progress-bar-fill" style="width: 100%;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CYBER SECURITY & THREAT DETECTION -->
+            <div class="soc-split-grid">
+                <!-- LIVE THREAT RADAR -->
+                <div class="terminal-panel">
+                    <div class="terminal-header">
+                        <div class="terminal-title">
+                            <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                            Cyber Threat Radar & Incident Stream
+                        </div>
+                        <button style="background: transparent; border: 1px solid var(--border-subtle); color: var(--text-dark); padding: 4px 8px; border-radius: 6px; font-size: 11px; cursor: pointer;" onclick="clearLogs()">Clear</button>
+                    </div>
+
+                    <div class="feed-container" id="security-feed">
+                        <div style="color: var(--text-dark); text-align: center; margin-top: 40px;">Listening for threat signatures...</div>
+                    </div>
+                </div>
+
+                <!-- ACTIVE FIREWALL & QUARANTINE -->
+                <div class="firewall-panel">
+                    <div class="terminal-header">
+                        <div class="terminal-title">
+                            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
+                            Active IP Firewall & Quarantine
+                        </div>
+                        <span id="firewall-count-badge" style="font-size: 11px; background: rgba(239, 68, 68, 0.15); color: var(--red); padding: 2px 8px; border-radius: 4px; font-weight: 700;">0 Blocked</span>
+                    </div>
+
+                    <!-- Quick IP Ban -->
+                    <form class="ban-input-box" onsubmit="handleManualBan(event)">
+                        <input type="text" id="manual-ban-ip" class="form-input" placeholder="IP Address to ban" required style="padding: 8px 12px; font-size: 12px;">
+                        <input type="text" id="manual-ban-reason" class="form-input" placeholder="Reason (e.g. Scraper)" style="padding: 8px 12px; font-size: 12px; width: 140px;">
+                        <button type="submit" class="btn-ban-submit">Quarantine</button>
+                    </form>
+
+                    <div class="firewall-list" id="firewall-list-box">
+                        <div style="color: var(--text-dark); text-align: center; margin-top: 40px;">No quarantined IP addresses.</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RENDER CLUSTER & ARCHITECTURE -->
+            <section class="render-card">
+                <div class="section-title">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01"/></svg>
+                    Render Deployment & Multi-Server Topology
+                </div>
+                <p style="font-size: 13px; color: var(--text-muted); margin-top: 6px;">
+                    This SOC Command Centre is built with isolated architecture. You can deploy it alongside the main app on Render in two modes:
+                </p>
+
+                <div class="render-grid">
+                    <div class="render-box">
+                        <div class="render-box-title">
+                            <span>MODE 1: Unified App & SOC (Single Render Service)</span>
+                            <span style="color: var(--green); font-size: 11px;">Recommended Free Tier</span>
+                        </div>
+                        <p style="font-size: 12px; color: var(--text-dark); margin-bottom: 8px;">Run both Main Site and SOC from single web service.</p>
+                        <div class="render-code">Start Command: gunicorn app:app<br>Access SOC: /soc</div>
+                    </div>
+
+                    <div class="render-box">
+                        <div class="render-box-title">
+                            <span>MODE 2: Dedicated Standalone SOC Server</span>
+                            <span style="color: var(--cyan); font-size: 11px;">Dedicated Service</span>
+                        </div>
+                        <p style="font-size: 12px; color: var(--text-dark); margin-bottom: 8px;">Independent Render service running isolated SOC server file.</p>
+                        <div class="render-code">Start Command: gunicorn soc_server:app<br>Config: render.yaml</div>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- MODAL FOR EDITING MAINTENANCE NOTICE -->
+    <div id="edit-modal">
+        <div class="modal-content">
+            <h3 style="font-size: 18px; font-weight: 800; color: #ffffff; margin-bottom: 16px;">Customize Maintenance Notice</h3>
+
+            <div class="form-group">
+                <label class="form-label" for="edit-title">Notice Headline</label>
+                <input type="text" id="edit-title" class="form-input">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="edit-msg">Public Explanation Message</label>
+                <textarea id="edit-msg" class="form-input" rows="4" style="resize: vertical;"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="edit-est">Estimated Duration / Status</label>
+                <input type="text" id="edit-est" class="form-input" placeholder="e.g. Estimated: 15-30 Minutes">
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px;">
+                <button type="button" class="btn-edit-maint" onclick="closeEditModal()">Cancel</button>
+                <button type="button" class="btn-soc-primary" style="width: auto; padding: 10px 20px;" onclick="saveMaintenanceNotice()">Save Notice</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST POPUP -->
+    <div id="soc-toast">
+        <span id="toast-text">Operation Successful</span>
+    </div>
+
+    <script>
+        // State tracking
+        let authToken = sessionStorage.getItem('soc_token') || localStorage.getItem('soc_token') || '';
+        let pollingTimer = null;
+        let isToggling = false;
+
+        // Clock display
+        function updateClock() {
+            const now = new Date();
+            const utc = now.toISOString().replace('T', ' ').substring(11, 19) + ' UTC';
+            document.getElementById('utc-clock').textContent = utc;
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // Toast feedback
+        function showToast(msg) {
+            const toast = document.getElementById('soc-toast');
+            document.getElementById('toast-text').textContent = msg;
+            toast.style.display = 'flex';
+            setTimeout(() => {
+                toast.style.display = 'none';
+            }, 3500);
+        }
+
+        // Authentication Handler
+        async function handleLogin(e) {
+            e.preventDefault();
+            const id = document.getElementById('login-id').value.trim();
+            const password = document.getElementById('login-pass').value.trim();
+            const btn = document.getElementById('btn-login-submit');
+            const errBox = document.getElementById('login-error-msg');
+
+            btn.disabled = true;
+            btn.innerHTML = 'Verifying SOC Credentials...';
+            errBox.style.display = 'none';
+
+            try {
+                const res = await fetch('/soc/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id, password })
+                });
+                const data = await res.json();
+
+                if (res.ok && data.success) {
+                    authToken = data.token;
+                    sessionStorage.setItem('soc_token', authToken);
+                    document.getElementById('login-modal').style.display = 'none';
+                    document.getElementById('soc-app').style.display = 'block';
+                    startDashboard();
+                    showToast('SOC Access Verified. Welcome Operator.');
+                } else {
+                    errBox.textContent = data.message || 'Invalid Credentials. Access Denied.';
+                    errBox.style.display = 'block';
+                }
+            } catch (err) {
+                errBox.textContent = 'Server connection error. Please retry.';
+                errBox.style.display = 'block';
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<span>Authenticate SOC Session</span><svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>';
+            }
+        }
+
+        async function handleLogout() {
+            try {
+                await fetch('/soc/api/logout', {
+                    method: 'POST',
+                    headers: { 'X-SOC-Token': authToken }
+                });
+            } catch(e) {}
+            sessionStorage.removeItem('soc_token');
+            authToken = '';
+            clearInterval(pollingTimer);
+            document.getElementById('soc-app').style.display = 'none';
+            document.getElementById('login-modal').style.display = 'flex';
+        }
+
+        // Toggle Website Master Switch
+        async function toggleWebsiteMaster(newCheckedState) {
+            if (isToggling) return;
+            isToggling = true;
+
+            try {
+                const res = await fetch('/soc/api/toggle-website', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-SOC-Token': authToken
+                    },
+                    body: JSON.stringify({ enabled: newCheckedState })
+                });
+                const data = await res.json();
+
+                if (res.ok && data.success) {
+                    applyWebsiteStateUI(data.website_active);
+                    showToast(data.message);
+                } else {
+                    // Revert checkbox if error
+                    document.getElementById('master-website-toggle').checked = !newCheckedState;
+                    showToast('Failed to toggle website status');
+                }
+            } catch (err) {
+                document.getElementById('master-website-toggle').checked = !newCheckedState;
+                showToast('Network error updating state');
+            } finally {
+                isToggling = false;
+            }
+        }
+
+        function applyWebsiteStateUI(isActive) {
+            const checkbox = document.getElementById('master-website-toggle');
+            const pill = document.getElementById('gateway-pill');
+            const desc = document.getElementById('gateway-status-desc');
+            const stateText = document.getElementById('switch-state-text');
+            const banner = document.getElementById('gateway-banner-box');
+
+            checkbox.checked = isActive;
+
+            if (isActive) {
+                pill.className = 'gateway-status-pill status-pill-online';
+                pill.textContent = 'ONLINE';
+                desc.textContent = 'Public requests are actively routed to India Get Your Result platform. Toggle switch OFF to engage immediate Maintenance Mode across all public endpoints.';
+                stateText.textContent = 'SYSTEM ACTIVE';
+                stateText.style.color = 'var(--green)';
+                banner.classList.remove('maintenance-mode');
+            } else {
+                pill.className = 'gateway-status-pill status-pill-offline';
+                pill.textContent = 'MAINTENANCE ENGAGED';
+                desc.textContent = '⚠️ PUBLIC ACCESS IS CURRENTLY BLOCKED. Visitors to any public page are seeing the scheduled Under Maintenance notice.';
+                stateText.textContent = 'MAINTENANCE ON';
+                stateText.style.color = 'var(--amber)';
+                banner.classList.add('maintenance-mode');
+            }
+        }
+
+        // Polling dashboard telemetry
+        async function refreshOverview() {
+            if (!authToken) return;
+            try {
+                const res = await fetch('/soc/api/overview', {
+                    headers: { 'X-SOC-Token': authToken }
+                });
+
+                if (res.status === 401) {
+                    handleLogout();
+                    return;
+                }
+
+                if (res.ok) {
+                    const data = await res.json();
+                    renderHealth(data.health);
+                    if (!isToggling) {
+                        applyWebsiteStateUI(data.website_control.website_active);
+                    }
+                    // Save for edit modal
+                    window.currentMaintInfo = data.website_control;
+                }
+            } catch(e) {
+                console.log("Telemetry poll:", e);
+            }
+        }
+
+        function renderHealth(health) {
+            if (!health) return;
+
+            // CPU
+            const cpuVal = (health.cpu_percent || 0).toFixed(1) + '%';
+            document.getElementById('metric-cpu').textContent = cpuVal;
+            document.getElementById('metric-cpu-bar').style.width = Math.min(health.cpu_percent, 100) + '%';
+
+            // RAM
+            if (health.memory) {
+                document.getElementById('metric-ram').textContent = health.memory.used_mb + ' MB';
+                document.getElementById('metric-ram-sub').textContent = `${health.memory.percent}% of ${health.memory.total_mb} MB`;
+                document.getElementById('metric-ram-bar').style.width = Math.min(health.memory.percent, 100) + '%';
+            }
+
+            // DB
+            if (health.database) {
+                document.getElementById('metric-db-status').textContent = health.database.status.toUpperCase();
+                document.getElementById('metric-db-sub').textContent = `Latency: ${health.database.latency_ms} ms (${health.database.collections_count} collections)`;
+            }
+
+            // Uptime & Traffic
+            document.getElementById('metric-uptime').textContent = health.uptime_str || '0s';
+            if (health.traffic) {
+                document.getElementById('metric-traffic-sub').textContent = `Throughput: ${health.traffic.rpm} RPM | ${health.traffic.total_threats_blocked} Threats Defended`;
+            }
+
+            document.getElementById('health-last-updated').textContent = 'Synced: ' + new Date().toLocaleTimeString();
+        }
+
+        // Security Logs Feed
+        async function refreshSecurityLogs() {
+            if (!authToken) return;
+            try {
+                const res = await fetch('/soc/api/security/logs?limit=50', {
+                    headers: { 'X-SOC-Token': authToken }
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    renderSecurityLogs(data.logs || []);
+                }
+            } catch(e) {}
+        }
+
+        function renderSecurityLogs(logs) {
+            const feed = document.getElementById('security-feed');
+            if (!logs || logs.length === 0) {
+                feed.innerHTML = '<div style="color: var(--text-dark); text-align: center; margin-top: 40px;">No cyber security alerts recorded. Platform secure.</div>';
+                return;
+            }
+
+            let html = '';
+            logs.forEach(log => {
+                const sev = log.severity || 'INFO';
+                html += `
+                    <div class="log-item">
+                        <div class="log-meta">
+                            <div>
+                                <span class="log-severity sev-${sev}">${sev}</span>
+                                <span class="log-ip" style="margin-left: 8px;">${log.ip || '0.0.0.0'}</span>
+                            </div>
+                            <span class="log-time">${log.timestamp || ''}</span>
+                        </div>
+                        <div class="log-details">
+                            <span style="color: #ffffff; font-weight: 600;">[${log.threat_type || 'INCIDENT'}]</span>
+                            ${escapeHtml(log.details || log.path || '')}
+                        </div>
+                    </div>
+                `;
+            });
+            feed.innerHTML = html;
+        }
+
+        async function clearLogs() {
+            if (!confirm('Clear all recorded security incidents?')) return;
+            try {
+                await fetch('/soc/api/security/clear-logs', {
+                    method: 'POST',
+                    headers: { 'X-SOC-Token': authToken }
+                });
+                refreshSecurityLogs();
+                showToast('Security incident logs cleared.');
+            } catch(e) {}
+        }
+
+        // Firewall List
+        async function refreshFirewall() {
+            if (!authToken) return;
+            try {
+                const res = await fetch('/soc/api/security/firewall', {
+                    headers: { 'X-SOC-Token': authToken }
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    renderFirewall(data.banned_ips || []);
+                }
+            } catch(e) {}
+        }
+
+        function renderFirewall(list) {
+            const box = document.getElementById('firewall-list-box');
+            const badge = document.getElementById('firewall-count-badge');
+            badge.textContent = `${list.length} Blocked`;
+
+            if (list.length === 0) {
+                box.innerHTML = '<div style="color: var(--text-dark); text-align: center; margin-top: 40px;">No active IP quarantine rules.</div>';
+                return;
+            }
+
+            let html = '';
+            list.forEach(item => {
+                html += `
+                    <div class="firewall-item">
+                        <div>
+                            <div class="firewall-ip-text">${escapeHtml(item.ip)}</div>
+                            <div class="firewall-reason">${escapeHtml(item.reason || 'Quarantined')}</div>
+                        </div>
+                        <button class="btn-unban" onclick="unbanIp('${item.ip}')">Unban IP</button>
+                    </div>
+                `;
+            });
+            box.innerHTML = html;
+        }
+
+        async function handleManualBan(e) {
+            e.preventDefault();
+            const ipInput = document.getElementById('manual-ban-ip');
+            const reasonInput = document.getElementById('manual-ban-reason');
+            const ip = ipInput.value.trim();
+            const reason = reasonInput.value.trim() || 'Manual Quarantine by Operator';
+
+            if (!ip) return;
+            try {
+                const res = await fetch('/soc/api/security/firewall/ban', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-SOC-Token': authToken
+                    },
+                    body: JSON.stringify({ ip, reason })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    showToast(`IP ${ip} quarantined.`);
+                    ipInput.value = '';
+                    reasonInput.value = '';
+                    refreshFirewall();
+                    refreshSecurityLogs();
+                } else {
+                    showToast(data.message || 'Failed to ban IP');
+                }
+            } catch(err) {
+                showToast('Network error quarantining IP');
+            }
+        }
+
+        async function unbanIp(ip) {
+            try {
+                const res = await fetch('/soc/api/security/firewall/unban', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-SOC-Token': authToken
+                    },
+                    body: JSON.stringify({ ip })
+                });
+                if (res.ok) {
+                    showToast(`IP ${ip} unbanned.`);
+                    refreshFirewall();
+                }
+            } catch(e) {}
+        }
+
+        // Maintenance Modal
+        function openEditModal() {
+            const info = window.currentMaintInfo || {};
+            document.getElementById('edit-title').value = info.maintenance_title || 'Scheduled Platform Maintenance';
+            document.getElementById('edit-msg').value = info.maintenance_message || '';
+            document.getElementById('edit-est').value = info.estimated_restoration || 'Estimated: 15-30 Minutes';
+            document.getElementById('edit-modal').style.display = 'flex';
+        }
+
+        function closeEditModal() {
+            document.getElementById('edit-modal').style.display = 'none';
+        }
+
+        async function saveMaintenanceNotice() {
+            const title = document.getElementById('edit-title').value.trim();
+            const message = document.getElementById('edit-msg').value.trim();
+            const estimated_restoration = document.getElementById('edit-est').value.trim();
+
+            try {
+                const res = await fetch('/soc/api/set-maintenance-info', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-SOC-Token': authToken
+                    },
+                    body: JSON.stringify({ title, message, estimated_restoration })
+                });
+                if (res.ok) {
+                    showToast('Maintenance notice updated.');
+                    closeEditModal();
+                    refreshOverview();
+                }
+            } catch(e) {
+                showToast('Failed to save notice.');
+            }
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+
+        function startDashboard() {
+            refreshOverview();
+            refreshSecurityLogs();
+            refreshFirewall();
+            if (pollingTimer) clearInterval(pollingTimer);
+            pollingTimer = setInterval(() => {
+                refreshOverview();
+                refreshSecurityLogs();
+                refreshFirewall();
+            }, 3000);
+        }
+
+        // Auto-login check on page load
+        if (authToken) {
+            document.getElementById('login-modal').style.display = 'none';
+            document.getElementById('soc-app').style.display = 'block';
+            startDashboard();
+        }
+    </script>
+</body>
+</html>
