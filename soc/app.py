@@ -39,8 +39,11 @@ CORS(app)
 # Credentials & Configuration
 SOC_USER = os.environ.get("SOC_USER", "igyr")
 SOC_PASSWORD = os.environ.get("SOC_PASSWORD", "cutiee")
-SOC_SECRET_KEY = os.environ.get("SOC_SECRET_KEY", secrets.token_hex(32))
 MAIN_SERVER_URL = os.environ.get("MAIN_SERVER_URL", "https://igyr-india-get-your-result.onrender.com").rstrip('/')
+ADMIN_SERVER_URL = os.environ.get("ADMIN_SERVER_URL", "https://igyr-admin-panel.onrender.com").rstrip('/')
+
+# Rolling historical time-series buffer for graph plotting
+telemetry_history = deque(maxlen=40)
 
 # Connect to MongoDB cluster
 MONGO_URI = os.environ.get("MONGO_URI", "mongodb+srv://auradispatch2026_db_user:611LdmEjTS7WeqKW@cluster0.z9xcllt.mongodb.net/?appName=Cluster0")
@@ -134,17 +137,53 @@ def collect_telemetry():
         except Exception as e:
             db_status = f"Degraded ({str(e)[:25]})"
 
-    # Main platform live ping
+    # 1. Main public platform live ping
     main_site_ping = "Unknown"
-    try:
-        req = urllib.request.Request(f"{MAIN_SERVER_URL}/health", headers={'User-Agent': 'IGYR-SOC-Monitor/1.0'})
-        with urllib.request.urlopen(req, timeout=3) as resp:
-            if resp.status == 200:
+    public_latency_ms = -1
+    public_candidates = [MAIN_SERVER_URL, "http://127.0.0.1:5005", "http://localhost:5005"]
+    for pub_url in public_candidates:
+        if not pub_url: continue
+        try:
+            t_pub = time.time()
+            req = urllib.request.Request(f"{pub_url}/health", headers={'User-Agent': 'IGYR-SOC-Monitor/1.0'})
+            with urllib.request.urlopen(req, timeout=2.5) as resp:
+                public_latency_ms = round((time.time() - t_pub) * 1000, 1)
                 main_site_ping = "Online (200 OK)"
-            else:
-                main_site_ping = f"Status {resp.status}"
-    except Exception as ping_err:
-        main_site_ping = "Unreachable / Maintenance"
+                break
+        except Exception:
+            pass
+    if main_site_ping == "Unknown":
+        main_site_ping = "Standby / Maintenance"
+
+    # 2. Admin operations panel live ping
+    admin_site_ping = "Unknown"
+    admin_latency_ms = -1
+    admin_candidates = [ADMIN_SERVER_URL, "http://127.0.0.1:5007", "http://localhost:5007"]
+    for adm_url in admin_candidates:
+        if not adm_url: continue
+        try:
+            t_adm = time.time()
+            req = urllib.request.Request(f"{adm_url}/health", headers={'User-Agent': 'IGYR-SOC-Monitor/1.0'})
+            with urllib.request.urlopen(req, timeout=2.5) as resp:
+                admin_latency_ms = round((time.time() - t_adm) * 1000, 1)
+                admin_site_ping = "Online (200 OK)"
+                break
+        except Exception:
+            pass
+    if admin_site_ping == "Unknown":
+        admin_site_ping = "Standby / Offline"
+
+    # Push to telemetry time-series history for real-time plotted graphs
+    now_time = datetime.utcnow().strftime("%H:%M:%S")
+    telemetry_history.append({
+        "time": now_time,
+        "public_latency": max(public_latency_ms, 0),
+        "admin_latency": max(admin_latency_ms, 0),
+        "db_latency": max(db_latency_ms, 0),
+        "public_status": main_site_ping,
+        "admin_status": admin_site_ping,
+        "db_status": db_status
+    })
 
     return {
         "status": "healthy" if db_status == "Connected" else "degraded",
@@ -164,8 +203,34 @@ def collect_telemetry():
         },
         "main_server": {
             "url": MAIN_SERVER_URL,
-            "status": main_site_ping
+            "status": main_site_ping,
+            "latency_ms": public_latency_ms
         },
+        "admin_server": {
+            "url": ADMIN_SERVER_URL,
+            "status": admin_site_ping,
+            "latency_ms": admin_latency_ms
+        },
+        "nodes": {
+            "public": {
+                "name": "Public Portal",
+                "url": MAIN_SERVER_URL,
+                "status": main_site_ping,
+                "latency_ms": public_latency_ms
+            },
+            "admin": {
+                "name": "Admin Panel",
+                "url": ADMIN_SERVER_URL,
+                "status": admin_site_ping,
+                "latency_ms": admin_latency_ms
+            },
+            "database": {
+                "name": "MongoDB Cluster",
+                "status": db_status,
+                "latency_ms": db_latency_ms
+            }
+        },
+        "history": list(telemetry_history),
         "environment": {
             "python_version": platform.python_version(),
             "os": f"{platform.system()} {platform.release()}",
@@ -288,6 +353,15 @@ def get_overview():
             "banned_ips_count": banned_count,
             "threats_blocked_total": threats_count
         }
+    })
+
+@app.route('/api/telemetry/graph', methods=['GET'])
+@app.route('/soc/api/telemetry/graph', methods=['GET'])
+@require_auth
+def get_telemetry_graph():
+    return jsonify({
+        "success": True,
+        "history": list(telemetry_history)
     })
 
 @app.route('/api/toggle-website', methods=['POST'])
