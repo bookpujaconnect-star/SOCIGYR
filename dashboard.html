@@ -1559,8 +1559,8 @@
                         <span class="node-metric-val" id="node-admin-login-lock-state" style="color: var(--green);">Unlocked</span>
                     </div>
                     <div class="node-metric-row">
-                        <span class="node-metric-label">Service Port</span>
-                        <span class="node-metric-val">:5007 / Render</span>
+                        <span class="node-metric-label">Server Ping</span>
+                        <span class="node-metric-val" id="node-admin-target">:5007 Online</span>
                     </div>
                     <a href="http://localhost:5007" target="_blank" class="node-link" id="node-admin-link">Open Admin Panel ↗</a>
                 </div>
@@ -2343,23 +2343,72 @@
                 const pub = health.nodes.public;
                 if (pub) {
                     const pubLatText = pub.latency_ms > 0 ? pub.latency_ms.toFixed(1) + ' ms' : 'Standby';
-                    document.getElementById('node-public-latency').textContent = pubLatText;
-                    document.getElementById('node-public-state').textContent = pub.status;
-                    const isPubOk = pub.status.includes('Online');
-                    document.getElementById('node-public-badge').textContent = isPubOk ? 'ONLINE' : 'STANDBY';
-                    document.getElementById('node-public-badge').className = 'node-badge ' + (isPubOk ? 'status-pill-online' : 'status-pill-offline');
-                    document.getElementById('node-public-dot').className = 'node-dot ' + (isPubOk ? 'dot-online' : 'dot-offline');
+                    const elPubLat = document.getElementById('node-public-latency');
+                    if (elPubLat) elPubLat.textContent = pubLatText;
+
+                    const isWebsiteActive = rawData && rawData.website_control ? rawData.website_control.website_active !== false : true;
+                    const elPubState = document.getElementById('node-public-state');
+                    if (elPubState) {
+                        if (!isWebsiteActive) {
+                            elPubState.textContent = 'Maintenance Mode (Traffic Blocked)';
+                            elPubState.style.color = 'var(--amber)';
+                        } else {
+                            elPubState.textContent = pub.status || 'Active Traffic';
+                            elPubState.style.color = 'var(--green)';
+                        }
+                    }
+
+                    const isPubOk = pub.status && pub.status.includes('Online');
+                    const elPubBadge = document.getElementById('node-public-badge');
+                    const elPubDot = document.getElementById('node-public-dot');
+
+                    if (elPubBadge) {
+                        if (!isWebsiteActive) {
+                            elPubBadge.textContent = 'MAINTENANCE';
+                            elPubBadge.className = 'node-badge status-pill-offline';
+                        } else {
+                            elPubBadge.textContent = isPubOk ? 'ONLINE' : 'STANDBY';
+                            elPubBadge.className = 'node-badge ' + (isPubOk ? 'status-pill-online' : 'status-pill-offline');
+                        }
+                    }
+                    if (elPubDot) {
+                        elPubDot.className = 'node-dot ' + (isWebsiteActive && isPubOk ? 'dot-online' : 'dot-offline');
+                    }
                 }
 
                 // Admin Panel Node
                 const adm = health.nodes.admin;
                 if (adm) {
                     const admLatText = adm.latency_ms > 0 ? adm.latency_ms.toFixed(1) + ' ms' : 'Standby';
-                    document.getElementById('node-admin-latency').textContent = admLatText;
-                    document.getElementById('node-admin-target').textContent = adm.status;
-                    const isAdmOk = adm.status.includes('Online');
-                    document.getElementById('node-admin-badge').textContent = isAdmOk ? 'ONLINE' : 'STANDBY';
-                    document.getElementById('node-admin-dot').className = 'node-dot ' + (isAdmOk ? 'dot-online' : 'dot-offline');
+                    const elAdmLat = document.getElementById('node-admin-latency');
+                    if (elAdmLat) elAdmLat.textContent = admLatText;
+
+                    const isLoginEnabled = rawData && rawData.website_control ? rawData.website_control.admin_login_enabled !== false : true;
+                    const elLockState = document.getElementById('node-admin-login-lock-state');
+                    if (elLockState) {
+                        elLockState.textContent = isLoginEnabled ? 'Unlocked (Login Allowed)' : 'Locked by SOC (403)';
+                        elLockState.style.color = isLoginEnabled ? 'var(--green)' : 'var(--red)';
+                    }
+
+                    const isAdmOk = adm.status && adm.status.includes('Online');
+                    const elAdmBadge = document.getElementById('node-admin-badge');
+                    const elAdmDot = document.getElementById('node-admin-dot');
+
+                    if (elAdmBadge) {
+                        if (!isLoginEnabled) {
+                            elAdmBadge.textContent = 'LOGIN LOCKED';
+                            elAdmBadge.className = 'node-badge status-pill-locked';
+                        } else {
+                            elAdmBadge.textContent = isAdmOk ? 'ONLINE' : 'STANDBY';
+                            elAdmBadge.className = 'node-badge ' + (isAdmOk ? 'status-pill-online' : 'status-pill-offline');
+                        }
+                    }
+                    if (elAdmDot) {
+                        elAdmDot.className = 'node-dot ' + (isLoginEnabled && isAdmOk ? 'dot-online' : 'dot-offline');
+                    }
+
+                    const elAdmTarget = document.getElementById('node-admin-target');
+                    if (elAdmTarget) elAdmTarget.textContent = adm.status;
                 }
 
                 // MongoDB Node
@@ -2371,8 +2420,10 @@
 
                 // SOC Node
                 if (rawData && rawData.security) {
-                    document.getElementById('node-soc-banned').textContent = (rawData.security.banned_ips_count || 0) + ' Quarantined';
-                    document.getElementById('node-soc-threats').textContent = (rawData.security.threats_blocked_total || 0) + ' Defended';
+                    const elBanned = document.getElementById('node-soc-banned');
+                    if (elBanned) elBanned.textContent = (rawData.security.banned_ips_count || 0) + ' Quarantined';
+                    const elThreats = document.getElementById('node-soc-threats');
+                    if (elThreats) elThreats.textContent = (rawData.security.threats_blocked_total || 0) + ' Defended';
                 }
             }
 

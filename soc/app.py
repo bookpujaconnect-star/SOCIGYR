@@ -84,7 +84,21 @@ def require_auth(f):
         return f(*args, **kwargs)
     return decorated
 
+def ensure_db():
+    global client, db, soc_control_col, soc_logs_col, soc_firewall_col
+    if db is None or soc_control_col is None:
+        try:
+            client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=4000)
+            db = client['igyr_database']
+            soc_control_col = db['soc_control']
+            soc_logs_col = db['soc_security_logs']
+            soc_firewall_col = db['soc_ip_firewall']
+        except Exception:
+            pass
+    return db
+
 def get_website_control_doc():
+    ensure_db()
     if soc_control_col is not None:
         try:
             doc = soc_control_col.find_one({"id": "system_state"})
@@ -461,19 +475,22 @@ def toggle_admin_login():
     else:
         new_status = not current_state
 
-    if soc_control_col is not None:
-        try:
-            soc_control_col.update_one(
-                {"id": "system_state"},
-                {"$set": {
-                    "admin_login_enabled": new_status,
-                    "admin_login_updated_at": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC"),
-                    "admin_login_updated_by": SOC_USER
-                }},
-                upsert=True
-            )
-        except Exception as e:
-            return jsonify({"success": False, "error": str(e)}), 500
+    ensure_db()
+    if soc_control_col is None:
+        return jsonify({"success": False, "error": "Database cluster connection unavailable"}), 503
+
+    try:
+        soc_control_col.update_one(
+            {"id": "system_state"},
+            {"$set": {
+                "admin_login_enabled": new_status,
+                "admin_login_updated_at": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC"),
+                "admin_login_updated_by": SOC_USER
+            }},
+            upsert=True
+        )
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
 
     # Log action
     if soc_logs_col is not None:
@@ -523,19 +540,22 @@ def toggle_website():
     else:
         new_status = not current_state
 
-    if soc_control_col is not None:
-        try:
-            soc_control_col.update_one(
-                {"id": "system_state"},
-                {"$set": {
-                    "website_active": new_status,
-                    "updated_at": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC"),
-                    "updated_by": SOC_USER
-                }},
-                upsert=True
-            )
-        except Exception as e:
-            return jsonify({"success": False, "error": str(e)}), 500
+    ensure_db()
+    if soc_control_col is None:
+        return jsonify({"success": False, "error": "Database cluster connection unavailable"}), 503
+
+    try:
+        soc_control_col.update_one(
+            {"id": "system_state"},
+            {"$set": {
+                "website_active": new_status,
+                "updated_at": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC"),
+                "updated_by": SOC_USER
+            }},
+            upsert=True
+        )
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
 
     # Log action
     if soc_logs_col is not None:
