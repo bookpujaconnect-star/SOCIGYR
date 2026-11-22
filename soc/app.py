@@ -23,6 +23,7 @@ from flask_cors import CORS
 from pymongo import MongoClient
 import urllib.request
 import urllib.error
+import threading
 
 # Telemetry
 try:
@@ -97,7 +98,15 @@ def ensure_db():
             pass
     return db
 
-def get_website_control_doc():
+_cached_control_doc = None
+_cached_control_time = 0
+
+def get_website_control_doc(force=False):
+    global _cached_control_doc, _cached_control_time
+    now = time.time()
+    if not force and _cached_control_doc is not None and (now - _cached_control_time) < 3.0:
+        return _cached_control_doc
+
     ensure_db()
     if soc_control_col is not None:
         try:
@@ -105,10 +114,13 @@ def get_website_control_doc():
             if doc:
                 if "admin_login_enabled" not in doc:
                     doc["admin_login_enabled"] = True
+                _cached_control_doc = doc
+                _cached_control_time = now
                 return doc
         except Exception:
             pass
-    return {
+
+    fallback = {
         "website_active": True,
         "admin_login_enabled": True,
         "maintenance_title": "Scheduled Platform Maintenance",
@@ -116,8 +128,24 @@ def get_website_control_doc():
         "estimated_restoration": "In progress (Checking real-time)",
         "updated_at": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
     }
+    _cached_control_doc = fallback
+    _cached_control_time = now
+    return fallback
 
-def get_database_storage_stats():
+_storage_cache = {"data": None, "last_updated": 0}
+_nodes_ping_cache = {
+    "public": ("Online (200 OK)", 1.2),
+    "admin": ("Online (200 OK)", 1.5),
+    "db": ("Connected", 1.8, 12),
+    "last_updated": 0
+}
+_security_counts_cache = {"banned": 0, "threats": 0, "last_updated": 0}
+
+def get_database_storage_stats(force=False):
+    now = time.time()
+    if not force and _storage_cache["data"] is not None and (now - _storage_cache["last_updated"]) < 15:
+        return _storage_cache["data"]
+
     # MongoDB Atlas Free Tier Quota = 512.0 MB
     QUOTA_MB = 512.0
     res = {
@@ -159,9 +187,13 @@ def get_database_storage_stats():
             col_counts = {}
             for col_name in ['results', 'institutes', 'notices', 'quicklinks', 'schemes', 'applications', 'fcm_tokens', 'soc_security_logs']:
                 try:
-                    col_counts[col_name] = db[col_name].count_documents({})
+                    # estimated_document_count is near-instantaneous (uses metadata)
+                    col_counts[col_name] = db[col_name].estimated_document_count()
                 except Exception:
-                    pass
+                    try:
+                        col_counts[col_name] = db[col_name].count_documents({})
+                    except Exception:
+                        pass
 
             res.update({
                 "connected": True,
@@ -181,7 +213,104 @@ def get_database_storage_stats():
             res["free_mb"] = 497.5
             res["percent_used"] = 2.83
             res["percent_free"] = 97.17
+
+    _storage_cache["data"] = res
+    _storage_cache["last_updated"] = now
     return res
+
+def ping_server_fast(candidates):
+    for url in candidates:
+        if not url: continue
+        try:
+            t0 = time.time()
+            req = urllib.request.Request(f"{url}/health", headers={'User-Agent': 'IGYR-SOC-Monitor/1.0'})
+            with urllib.request.urlopen(req, timeout=0.6) as resp:
+                lat = round((time.time() - t0) * 1000, 1)
+                return "Online (200 OK)", lat
+        except Exception:
+            pass
+    return "Standby / Maintenance", -1
+
+_worker_started = False
+_worker_lock = threading.Lock()
+
+def _background_telemetry_worker():
+    global telemetry_history, _nodes_ping_cache, _storage_cache, _security_counts_cache
+    while True:
+        try:
+            now = time.time()
+            public_candidates = [MAIN_SERVER_URL, "http://127.0.0.1:5005", "http://localhost:5005"]
+            admin_candidates = [ADMIN_SERVER_URL, "http://127.0.0.1:5007", "http://localhost:5007"]
+            pub_ping, pub_lat = ping_server_fast(public_candidates)
+            adm_ping, adm_lat = ping_server_fast(admin_candidates)
+            _nodes_ping_cache["public"] = (pub_ping, pub_lat)
+            _nodes_ping_cache["admin"] = (adm_ping, adm_lat)
+
+            # DB Ping
+            ensure_db()
+            db_status = "Disconnected"
+            db_lat = -1
+            collections_count = 0
+            if db is not None:
+                try:
+                    t0 = time.time()
+                    db.command('ping')
+                    db_lat = round((time.time() - t0) * 1000, 2)
+                    db_status = "Connected"
+                    collections_count = len(db.list_collection_names())
+                except Exception as e:
+                    db_status = f"Degraded ({str(e)[:25]})"
+
+            _nodes_ping_cache["db"] = (db_status, db_lat, collections_count)
+            _nodes_ping_cache["last_updated"] = now
+
+            # Append to time-series graph
+            now_time = datetime.utcnow().strftime("%H:%M:%S")
+            telemetry_history.append({
+                "time": now_time,
+                "public_latency": max(pub_lat, 0),
+                "admin_latency": max(adm_lat, 0),
+                "db_latency": max(db_lat, 0),
+                "public_status": pub_ping,
+                "admin_status": adm_ping,
+                "db_status": db_status
+            })
+
+            # Periodically refresh storage cache in background (every 25s)
+            if (now - _storage_cache["last_updated"]) > 25:
+                get_database_storage_stats(force=True)
+
+            # Update security counts in background
+            if soc_firewall_col is not None:
+                try:
+                    _security_counts_cache["banned"] = soc_firewall_col.estimated_document_count()
+                except Exception:
+                    try:
+                        _security_counts_cache["banned"] = soc_firewall_col.count_documents({})
+                    except Exception:
+                        pass
+            if soc_logs_col is not None:
+                try:
+                    _security_counts_cache["threats"] = soc_logs_col.count_documents({"blocked": True})
+                except Exception:
+                    pass
+            _security_counts_cache["last_updated"] = now
+        except Exception:
+            pass
+        time.sleep(4.0)
+
+def ensure_worker_running():
+    global _worker_started
+    if not _worker_started:
+        with _worker_lock:
+            if not _worker_started:
+                _worker_started = True
+                t = threading.Thread(target=_background_telemetry_worker, daemon=True)
+                t.start()
+
+@app.before_request
+def init_background_worker():
+    ensure_worker_running()
 
 def collect_telemetry():
     now = time.time()
@@ -206,67 +335,13 @@ def collect_telemetry():
         except Exception:
             pass
 
-    # MongoDB status & latency ping
-    db_status = "Disconnected"
-    db_latency_ms = -1
-    collections_count = 0
-    if db is not None:
-        try:
-            t0 = time.time()
-            db.command('ping')
-            db_latency_ms = round((time.time() - t0) * 1000, 2)
-            db_status = "Connected"
-            collections_count = len(db.list_collection_names())
-        except Exception as e:
-            db_status = f"Degraded ({str(e)[:25]})"
-
-    # 1. Main public platform live ping
-    main_site_ping = "Unknown"
-    public_latency_ms = -1
-    public_candidates = [MAIN_SERVER_URL, "http://127.0.0.1:5005", "http://localhost:5005"]
-    for pub_url in public_candidates:
-        if not pub_url: continue
-        try:
-            t_pub = time.time()
-            req = urllib.request.Request(f"{pub_url}/health", headers={'User-Agent': 'IGYR-SOC-Monitor/1.0'})
-            with urllib.request.urlopen(req, timeout=2.5) as resp:
-                public_latency_ms = round((time.time() - t_pub) * 1000, 1)
-                main_site_ping = "Online (200 OK)"
-                break
-        except Exception:
-            pass
-    if main_site_ping == "Unknown":
-        main_site_ping = "Standby / Maintenance"
-
-    # 2. Admin operations panel live ping
-    admin_site_ping = "Unknown"
-    admin_latency_ms = -1
-    admin_candidates = [ADMIN_SERVER_URL, "http://127.0.0.1:5007", "http://localhost:5007"]
-    for adm_url in admin_candidates:
-        if not adm_url: continue
-        try:
-            t_adm = time.time()
-            req = urllib.request.Request(f"{adm_url}/health", headers={'User-Agent': 'IGYR-SOC-Monitor/1.0'})
-            with urllib.request.urlopen(req, timeout=2.5) as resp:
-                admin_latency_ms = round((time.time() - t_adm) * 1000, 1)
-                admin_site_ping = "Online (200 OK)"
-                break
-        except Exception:
-            pass
-    if admin_site_ping == "Unknown":
-        admin_site_ping = "Standby / Offline"
-
-    # Push to telemetry time-series history for real-time plotted graphs
-    now_time = datetime.utcnow().strftime("%H:%M:%S")
-    telemetry_history.append({
-        "time": now_time,
-        "public_latency": max(public_latency_ms, 0),
-        "admin_latency": max(admin_latency_ms, 0),
-        "db_latency": max(db_latency_ms, 0),
-        "public_status": main_site_ping,
-        "admin_status": admin_site_ping,
-        "db_status": db_status
-    })
+    # Read from background worker cache with zero latency
+    main_site_ping, public_latency_ms = _nodes_ping_cache["public"]
+    admin_site_ping, admin_latency_ms = _nodes_ping_cache["admin"]
+    db_info = _nodes_ping_cache.get("db", ("Connected", 1.2, 12))
+    db_status = db_info[0]
+    db_latency_ms = db_info[1]
+    collections_count = db_info[2] if len(db_info) > 2 else 12
 
     return {
         "status": "healthy" if db_status == "Connected" else "degraded",
@@ -424,18 +499,8 @@ def get_overview():
     telemetry = collect_telemetry()
     storage_stats = get_database_storage_stats()
 
-    banned_count = 0
-    threats_count = 0
-    if soc_firewall_col is not None:
-        try:
-            banned_count = soc_firewall_col.count_documents({})
-        except Exception:
-            pass
-    if soc_logs_col is not None:
-        try:
-            threats_count = soc_logs_col.count_documents({"blocked": True})
-        except Exception:
-            pass
+    banned_count = _security_counts_cache.get("banned", 0)
+    threats_count = _security_counts_cache.get("threats", 0)
 
     return jsonify({
         "success": True,
@@ -466,6 +531,7 @@ def get_db_storage():
 @require_auth
 def toggle_admin_login():
     """Toggles Super Admin Login Access ON/OFF via MongoDB."""
+    global _cached_control_doc, _cached_control_time
     data = request.json or {}
     current = get_website_control_doc()
     current_state = bool(current.get("admin_login_enabled", True))
@@ -474,6 +540,14 @@ def toggle_admin_login():
         new_status = bool(data["enabled"])
     else:
         new_status = not current_state
+
+    # Update in-memory cache instantly
+    updated = dict(current)
+    updated["admin_login_enabled"] = new_status
+    updated["admin_login_updated_at"] = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
+    updated["admin_login_updated_by"] = SOC_USER
+    _cached_control_doc = updated
+    _cached_control_time = time.time()
 
     ensure_db()
     if soc_control_col is None:
@@ -484,7 +558,7 @@ def toggle_admin_login():
             {"id": "system_state"},
             {"$set": {
                 "admin_login_enabled": new_status,
-                "admin_login_updated_at": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC"),
+                "admin_login_updated_at": updated["admin_login_updated_at"],
                 "admin_login_updated_by": SOC_USER
             }},
             upsert=True
@@ -531,6 +605,7 @@ def get_telemetry_graph():
 @require_auth
 def toggle_website():
     """Toggles main website traffic ON/OFF via MongoDB."""
+    global _cached_control_doc, _cached_control_time
     data = request.json or {}
     current = get_website_control_doc()
     current_state = bool(current.get("website_active", True))
@@ -539,6 +614,14 @@ def toggle_website():
         new_status = bool(data["enabled"])
     else:
         new_status = not current_state
+
+    # Update in-memory cache instantly
+    updated = dict(current)
+    updated["website_active"] = new_status
+    updated["updated_at"] = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
+    updated["updated_by"] = SOC_USER
+    _cached_control_doc = updated
+    _cached_control_time = time.time()
 
     ensure_db()
     if soc_control_col is None:
@@ -549,7 +632,7 @@ def toggle_website():
             {"id": "system_state"},
             {"$set": {
                 "website_active": new_status,
-                "updated_at": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC"),
+                "updated_at": updated["updated_at"],
                 "updated_by": SOC_USER
             }},
             upsert=True
@@ -586,10 +669,20 @@ def toggle_website():
 @app.route('/soc/api/set-maintenance-info', methods=['POST'])
 @require_auth
 def update_maintenance_notice():
+    global _cached_control_doc, _cached_control_time
     data = request.json or {}
     title = data.get('title', 'Scheduled Platform Maintenance').strip()
     msg = data.get('message', '').strip()
     est = data.get('estimated_restoration', 'Estimated: 15-30 Minutes').strip()
+
+    current = get_website_control_doc()
+    updated = dict(current)
+    updated["maintenance_title"] = title
+    updated["maintenance_message"] = msg
+    updated["estimated_restoration"] = est
+    updated["updated_at"] = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
+    _cached_control_doc = updated
+    _cached_control_time = time.time()
 
     if soc_control_col is not None:
         try:
@@ -599,7 +692,7 @@ def update_maintenance_notice():
                     "maintenance_title": title,
                     "maintenance_message": msg,
                     "estimated_restoration": est,
-                    "updated_at": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
+                    "updated_at": updated["updated_at"]
                 }},
                 upsert=True
             )
@@ -625,9 +718,11 @@ def get_security_logs():
 @app.route('/soc/api/security/clear-logs', methods=['POST'])
 @require_auth
 def clear_security_logs():
+    global _security_counts_cache
     if soc_logs_col is not None:
         try:
             soc_logs_col.delete_many({})
+            _security_counts_cache["threats"] = 0
         except Exception:
             pass
     return jsonify({"success": True, "message": "Logs cleared."})
@@ -648,6 +743,7 @@ def get_firewall():
 @app.route('/soc/api/security/firewall/ban', methods=['POST'])
 @require_auth
 def ban_ip():
+    global _security_counts_cache
     data = request.json or {}
     ip = str(data.get('ip', '')).strip()
     reason = str(data.get('reason', 'Quarantined by SOC')).strip()
@@ -666,6 +762,7 @@ def ban_ip():
                 }},
                 upsert=True
             )
+            _security_counts_cache["banned"] = _security_counts_cache.get("banned", 0) + 1
         except Exception as e:
             return jsonify({"success": False, "error": str(e)}), 500
 
@@ -675,6 +772,7 @@ def ban_ip():
 @app.route('/soc/api/security/firewall/unban', methods=['POST'])
 @require_auth
 def unban_ip():
+    global _security_counts_cache
     data = request.json or {}
     ip = str(data.get('ip', '')).strip()
     if not ip:
@@ -683,6 +781,7 @@ def unban_ip():
     if soc_firewall_col is not None:
         try:
             soc_firewall_col.delete_one({"ip": ip})
+            _security_counts_cache["banned"] = max(0, _security_counts_cache.get("banned", 1) - 1)
         except Exception as e:
             return jsonify({"success": False, "error": str(e)}), 500
 

@@ -1888,7 +1888,10 @@
             } catch(e) {}
             sessionStorage.removeItem('soc_token');
             authToken = '';
-            clearInterval(pollingTimer);
+            if (overviewTimer) clearInterval(overviewTimer);
+            if (logsTimer) clearInterval(logsTimer);
+            if (firewallTimer) clearInterval(firewallTimer);
+            if (pollingTimer) clearInterval(pollingTimer);
             document.getElementById('soc-app').style.display = 'none';
             document.getElementById('login-modal').style.display = 'flex';
         }
@@ -2160,17 +2163,30 @@
             // Collections breakdown
             const collsBox = document.getElementById('storage-collections-list');
             if (collsBox && storage.collections) {
-                let html = '';
-                for (const [collName, count] of Object.entries(storage.collections)) {
-                    html += `<div class="collection-chip"><span>📁 ${escapeHtml(collName)}:</span><strong>${count.toLocaleString()} docs</strong></div>`;
+                const collsHash = JSON.stringify(storage.collections);
+                if (collsBox.dataset.lastHash !== collsHash) {
+                    collsBox.dataset.lastHash = collsHash;
+                    let html = '';
+                    for (const [collName, count] of Object.entries(storage.collections)) {
+                        html += `<div class="collection-chip"><span>📁 ${escapeHtml(collName)}:</span><strong>${count.toLocaleString()} docs</strong></div>`;
+                    }
+                    collsBox.innerHTML = html;
                 }
-                collsBox.innerHTML = html;
             }
         }
 
+        // Concurrency guards for smooth non-blocking execution
+        let isFetchingOverview = false;
+        let isFetchingLogs = false;
+        let isFetchingFirewall = false;
+        let overviewTimer = null;
+        let logsTimer = null;
+        let firewallTimer = null;
+
         // Polling dashboard telemetry
         async function refreshOverview() {
-            if (!authToken) return;
+            if (!authToken || isFetchingOverview) return;
+            isFetchingOverview = true;
             try {
                 const res = await fetch('/soc/api/overview', {
                     headers: { 'X-SOC-Token': authToken }
@@ -2201,6 +2217,8 @@
                 }
             } catch(e) {
                 console.log("Telemetry poll:", e);
+            } finally {
+                isFetchingOverview = false;
             }
         }
 
@@ -2460,8 +2478,11 @@
         }
 
         // Security Logs Feed
+        let lastLogsFingerprint = "";
+
         async function refreshSecurityLogs() {
-            if (!authToken) return;
+            if (!authToken || isFetchingLogs) return;
+            isFetchingLogs = true;
             try {
                 const res = await fetch('/soc/api/security/logs?limit=50', {
                     headers: { 'X-SOC-Token': authToken }
@@ -2470,15 +2491,28 @@
                     const data = await res.json();
                     renderSecurityLogs(data.logs || []);
                 }
-            } catch(e) {}
+            } catch(e) {
+            } finally {
+                isFetchingLogs = false;
+            }
         }
 
         function renderSecurityLogs(logs) {
             const feed = document.getElementById('security-feed');
+            if (!feed) return;
             if (!logs || logs.length === 0) {
-                feed.innerHTML = '<div style="color: var(--text-dark); text-align: center; margin-top: 40px;">No cyber security alerts recorded. Platform secure.</div>';
+                if (lastLogsFingerprint !== "EMPTY") {
+                    feed.innerHTML = '<div style="color: var(--text-dark); text-align: center; margin-top: 40px;">No cyber security alerts recorded. Platform secure.</div>';
+                    lastLogsFingerprint = "EMPTY";
+                }
                 return;
             }
+
+            const fingerprint = logs.length + '_' + (logs[0]?.timestamp || '') + '_' + (logs[0]?.details || '');
+            if (fingerprint === lastLogsFingerprint) {
+                return; // Logs unchanged - skip DOM repaint to prevent lag
+            }
+            lastLogsFingerprint = fingerprint;
 
             let html = '';
             logs.forEach(log => {
@@ -2509,14 +2543,19 @@
                     method: 'POST',
                     headers: { 'X-SOC-Token': authToken }
                 });
+                lastLogsFingerprint = "";
                 refreshSecurityLogs();
+                refreshOverview();
                 showToast('Security incident logs cleared.');
             } catch(e) {}
         }
 
         // Firewall List
+        let lastFirewallFingerprint = "";
+
         async function refreshFirewall() {
-            if (!authToken) return;
+            if (!authToken || isFetchingFirewall) return;
+            isFetchingFirewall = true;
             try {
                 const res = await fetch('/soc/api/security/firewall', {
                     headers: { 'X-SOC-Token': authToken }
@@ -2525,18 +2564,31 @@
                     const data = await res.json();
                     renderFirewall(data.banned_ips || []);
                 }
-            } catch(e) {}
+            } catch(e) {
+            } finally {
+                isFetchingFirewall = false;
+            }
         }
 
         function renderFirewall(list) {
             const box = document.getElementById('firewall-list-box');
             const badge = document.getElementById('firewall-count-badge');
-            badge.textContent = `${list.length} Blocked`;
+            if (badge) badge.textContent = `${list.length} Blocked`;
+            if (!box) return;
 
             if (list.length === 0) {
-                box.innerHTML = '<div style="color: var(--text-dark); text-align: center; margin-top: 40px;">No active IP quarantine rules.</div>';
+                if (lastFirewallFingerprint !== "EMPTY") {
+                    box.innerHTML = '<div style="color: var(--text-dark); text-align: center; margin-top: 40px;">No active IP quarantine rules.</div>';
+                    lastFirewallFingerprint = "EMPTY";
+                }
                 return;
             }
+
+            const fingerprint = list.length + '_' + (list[0]?.ip || '');
+            if (fingerprint === lastFirewallFingerprint) {
+                return; // Quarantine rules unchanged - skip DOM repaint to prevent lag
+            }
+            lastFirewallFingerprint = fingerprint;
 
             let html = '';
             list.forEach(item => {
@@ -2575,8 +2627,11 @@
                     showToast(`IP ${ip} quarantined.`);
                     ipInput.value = '';
                     reasonInput.value = '';
+                    lastFirewallFingerprint = "";
+                    lastLogsFingerprint = "";
                     refreshFirewall();
                     refreshSecurityLogs();
+                    refreshOverview();
                 } else {
                     showToast(data.message || 'Failed to ban IP');
                 }
@@ -2597,7 +2652,9 @@
                 });
                 if (res.ok) {
                     showToast(`IP ${ip} unbanned.`);
+                    lastFirewallFingerprint = "";
                     refreshFirewall();
+                    refreshOverview();
                 }
             } catch(e) {}
         }
@@ -2645,15 +2702,31 @@
         }
 
         function startDashboard() {
+            // Initial staggered data population
             refreshOverview();
-            refreshSecurityLogs();
-            refreshFirewall();
+            setTimeout(refreshSecurityLogs, 350);
+            setTimeout(refreshFirewall, 700);
+
+            if (overviewTimer) clearInterval(overviewTimer);
+            if (logsTimer) clearInterval(logsTimer);
+            if (firewallTimer) clearInterval(firewallTimer);
             if (pollingTimer) clearInterval(pollingTimer);
-            pollingTimer = setInterval(() => {
-                refreshOverview();
-                refreshSecurityLogs();
-                refreshFirewall();
-            }, 3000);
+
+            // Staggered non-overlapping polling to ensure zero browser hang / UI freeze
+            // 1. Overview & node telemetry: every 4 seconds
+            overviewTimer = setInterval(() => {
+                if (!document.hidden) refreshOverview();
+            }, 4000);
+
+            // 2. Incident security logs: every 9 seconds
+            logsTimer = setInterval(() => {
+                if (!document.hidden) refreshSecurityLogs();
+            }, 9000);
+
+            // 3. Firewall rules: every 12 seconds
+            firewallTimer = setInterval(() => {
+                if (!document.hidden) refreshFirewall();
+            }, 12000);
         }
 
         // Initialize Theme (Dark/Light mode)
