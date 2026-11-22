@@ -25,6 +25,108 @@
             --amber: #f59e0b;
             --red: #ef4444;
             --purple: #8b5cf6;
+            --card-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        [data-theme="light"] {
+            --bg-body: #f8fafc;
+            --bg-surface: #ffffff;
+            --bg-card: #ffffff;
+            --bg-card-hover: #f1f5f9;
+            --border-subtle: #e2e8f0;
+            --border-bright: rgba(2, 132, 199, 0.4);
+            --text-main: #0f172a;
+            --text-muted: #475569;
+            --text-dark: #64748b;
+            --cyan: #0284c7;
+            --green: #16a34a;
+            --amber: #d97706;
+            --red: #dc2626;
+            --purple: #7c3aed;
+            --card-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+        }
+
+        [data-theme="light"] .grid-glow {
+            background: radial-gradient(circle at 50% 0%, rgba(2, 132, 199, 0.06) 0%, transparent 60%);
+        }
+
+        [data-theme="light"] .form-input {
+            background: #f8fafc;
+            border-color: #cbd5e1;
+            color: #0f172a;
+        }
+
+        [data-theme="light"] .soc-nav {
+            background: rgba(255, 255, 255, 0.92);
+            border-bottom: 1px solid #e2e8f0;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+        }
+
+        [data-theme="light"] .nav-title,
+        [data-theme="light"] .section-title,
+        [data-theme="light"] .metric-val,
+        [data-theme="light"] .node-metric-val,
+        [data-theme="light"] .gateway-info h2,
+        [data-theme="light"] .graph-title,
+        [data-theme="light"] .terminal-title,
+        [data-theme="light"] .login-title,
+        [data-theme="light"] .storage-stat-val {
+            color: #0f172a !important;
+        }
+
+        [data-theme="light"] .clock-display {
+            background: #f1f5f9;
+            border-color: #cbd5e1;
+            color: #334155;
+        }
+
+        [data-theme="light"] .metric-icon {
+            background: #f1f5f9;
+        }
+
+        [data-theme="light"] .btn-theme-toggle {
+            background: #f1f5f9;
+            border-color: #cbd5e1;
+            color: #0f172a;
+        }
+
+        [data-theme="light"] .switch-container {
+            background: #f8fafc;
+            border-color: #e2e8f0;
+        }
+
+        [data-theme="light"] .login-card {
+            background: #ffffff;
+            box-shadow: 0 20px 50px rgba(2, 132, 199, 0.12);
+            border-color: #cbd5e1;
+        }
+
+        [data-theme="light"] .modal-content {
+            background: #ffffff !important;
+            border-color: #cbd5e1 !important;
+        }
+
+        [data-theme="light"] .modal-content h3 {
+            color: #0f172a !important;
+        }
+
+        [data-theme="light"] .render-code {
+            background: #f1f5f9;
+            color: #0284c7;
+            border-color: #e2e8f0;
+        }
+
+        [data-theme="light"] .firewall-ip-text {
+            color: #0f172a;
+        }
+
+        [data-theme="light"] .log-item {
+            background: #f8fafc;
+            border-color: #e2e8f0;
+        }
+
+        [data-theme="light"] .log-details span {
+            color: #0284c7 !important;
         }
 
         * {
@@ -825,6 +927,163 @@
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
             z-index: 9999;
             font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* THEME TOGGLE BUTTON */
+        .btn-theme-toggle {
+            background: var(--bg-card);
+            border: 1px solid var(--border-bright);
+            color: var(--text-main);
+            padding: 7px 14px;
+            border-radius: 10px;
+            font-size: 12px;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.25s ease;
+        }
+
+        .btn-theme-toggle:hover {
+            border-color: var(--cyan);
+            box-shadow: 0 0 12px rgba(0, 229, 255, 0.3);
+            transform: translateY(-1px);
+        }
+
+        /* DUAL COMMAND GATEWAY GRID */
+        .dual-gateway-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 32px;
+        }
+
+        @media (max-width: 900px) {
+            .dual-gateway-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .gateway-banner.admin-locked::before {
+            background: var(--red);
+        }
+
+        /* DATABASE STORAGE CAPACITY CARD */
+        .storage-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: 20px;
+            padding: 24px 28px;
+            margin-bottom: 36px;
+            position: relative;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .storage-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 14px;
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .storage-title-wrap {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .storage-icon-badge {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            background: rgba(0, 229, 255, 0.1);
+            border: 1px solid rgba(0, 229, 255, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--cyan);
+        }
+
+        .storage-grid-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 18px;
+            margin-bottom: 22px;
+        }
+
+        .storage-stat-box {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 12px;
+            padding: 16px 18px;
+        }
+
+        .storage-stat-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+
+        .storage-stat-val {
+            font-size: 24px;
+            font-weight: 900;
+            font-family: 'JetBrains Mono', monospace;
+            color: #ffffff;
+        }
+
+        .storage-stat-sub {
+            font-size: 11px;
+            color: var(--text-dark);
+            margin-top: 4px;
+        }
+
+        .storage-progress-container {
+            margin-bottom: 20px;
+        }
+
+        .storage-progress-labels {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            font-family: 'JetBrains Mono', monospace;
+            margin-bottom: 8px;
+        }
+
+        .storage-collections-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 14px;
+        }
+
+        .collection-chip {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-family: 'JetBrains Mono', monospace;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-main);
+        }
+
+        .collection-chip strong {
+            color: var(--cyan);
+        }
+
         /* 3-TIER ECOSYSTEM NODES */
         .nodes-grid {
             display: grid;
@@ -1008,12 +1267,15 @@
     <!-- LOGIN MODAL SCREEN -->
     <div id="login-modal">
         <div class="login-card">
-            <div class="login-badge">
+            <div style="text-align: center; margin-bottom: 16px;">
+                <img src="igyr-logo.jpg" alt="IGYR SOC Crest" style="width: 76px; height: 76px; border-radius: 50%; object-fit: cover; border: 2px solid var(--cyan); box-shadow: 0 0 25px rgba(0, 229, 255, 0.45); display: inline-block;">
+            </div>
+            <div class="login-badge" style="display: flex; justify-content: center;">
                 <svg width="12" height="12" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 1.944A11.954 11.954 0 012.166 5C2.056 5.649 2 6.319 2 7c0 5.225 3.34 9.67 8 11.317C14.66 16.67 18 12.225 18 7c0-.682-.057-1.35-.166-2.001A11.954 11.954 0 0110 1.944z" clip-rule="evenodd"/></svg>
                 SOC COMMAND ACCESS
             </div>
-            <h2 class="login-title">Security Operations Centre</h2>
-            <p class="login-desc">Enter your authorized SOC Identity and Access Key to open the platform control deck.</p>
+            <h2 class="login-title" style="text-align: center;">Security Operations Centre</h2>
+            <p class="login-desc" style="text-align: center;">Enter your authorized SOC Operator ID and Access Key to open the central platform control deck.</p>
 
             <form id="soc-login-form" onsubmit="handleLogin(event)">
                 <div class="form-group">
@@ -1040,11 +1302,11 @@
         <header class="soc-nav">
             <div class="nav-left">
                 <div class="nav-brand-box">
-                    <div class="nav-badge-icon">SOC</div>
+                    <img src="igyr-logo.jpg" alt="IGYR Logo" style="width: 42px; height: 42px; border-radius: 50%; object-fit: cover; border: 2px solid var(--cyan); box-shadow: 0 0 12px rgba(0, 229, 255, 0.35);">
                     <div>
                         <div class="nav-title">
                             <span>IGYR SECURITY OPERATIONS CENTRE</span>
-                            <span style="font-size: 11px; background: rgba(0, 229, 255, 0.15); color: var(--cyan); padding: 2px 6px; border-radius: 4px; font-weight: 700;">LIVE v2.4</span>
+                            <span style="font-size: 11px; background: rgba(0, 229, 255, 0.15); color: var(--cyan); padding: 2px 6px; border-radius: 4px; font-weight: 700;">LIVE v2.5</span>
                         </div>
                         <div class="nav-subtitle">CENTRAL INFRASTRUCTURE & CYBER DEFENSE</div>
                     </div>
@@ -1052,6 +1314,12 @@
             </div>
 
             <div class="nav-right">
+                <!-- THEME TOGGLE BUTTON -->
+                <button id="theme-toggle-btn" class="btn-theme-toggle" onclick="toggleSocTheme()" title="Switch Light / Dark Theme">
+                    <span id="theme-toggle-icon">☀️</span>
+                    <span id="theme-toggle-text">Light Mode</span>
+                </button>
+
                 <div class="clock-display">
                     <span class="status-dot-green"></span>
                     <span id="utc-clock">--:--:-- UTC</span>
@@ -1063,44 +1331,145 @@
         <!-- MAIN DECK -->
         <main class="soc-main">
 
-            <!-- MASTER KILL-SWITCH GATEWAY -->
-            <section class="gateway-banner" id="gateway-banner-box">
-                <div class="gateway-info">
-                    <h2>
-                        <span>Main Platform Traffic Gateway</span>
-                        <span id="gateway-pill" class="gateway-status-pill status-pill-online">ONLINE</span>
-                    </h2>
-                    <p id="gateway-status-desc">
-                        Public requests are actively routed to India Get Your Result platform. Toggle switch OFF to engage immediate Maintenance Mode across all public endpoints.
-                    </p>
+            <!-- DUAL MASTER KILL-SWITCH GATEWAY -->
+            <div class="dual-gateway-grid">
+                <!-- GATEWAY 1: PUBLIC TRAFFIC SWITCH -->
+                <section class="gateway-banner" id="gateway-banner-box">
+                    <div class="gateway-info">
+                        <h2>
+                            <span>Public Traffic Gateway</span>
+                            <span id="gateway-pill" class="gateway-status-pill status-pill-online">ONLINE</span>
+                        </h2>
+                        <p id="gateway-status-desc">
+                            Public requests are actively routed to India Get Your Result platform. Toggle switch OFF to engage immediate Maintenance Mode across all public endpoints.
+                        </p>
+                    </div>
+
+                    <div class="gateway-actions">
+                        <button class="btn-edit-maint" onclick="openEditModal()">
+                            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" style="display:inline; vertical-align:middle; margin-right:4px;"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                            Edit Notice
+                        </button>
+
+                        <div class="switch-container">
+                            <div class="switch-label-state">
+                                <div id="switch-state-text" style="color: var(--green);">SYSTEM ACTIVE</div>
+                                <div style="font-size: 10px; color: var(--text-dark);">PUBLIC TRAFFIC</div>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="master-website-toggle" onchange="toggleWebsiteMaster(this.checked)">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- GATEWAY 2: SUPER ADMIN LOGIN ON / OFF SWITCH -->
+                <section class="gateway-banner" id="admin-login-banner-box">
+                    <div class="gateway-info">
+                        <h2>
+                            <span>Admin Login Access</span>
+                            <span id="admin-login-pill" class="gateway-status-pill status-pill-online">UNLOCKED</span>
+                        </h2>
+                        <p id="admin-login-status-desc">
+                            Super Admin Portal authentication is currently unlocked and accepting credentials. Toggle switch OFF to immediately lock all admin login attempts.
+                        </p>
+                    </div>
+
+                    <div class="gateway-actions">
+                        <div class="switch-container">
+                            <div class="switch-label-state">
+                                <div id="admin-login-state-text" style="color: var(--green);">LOGIN ALLOWED</div>
+                                <div style="font-size: 10px; color: var(--text-dark);">ADMIN ACCESS</div>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="master-admin-login-toggle" onchange="toggleAdminLoginMaster(this.checked)" checked>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- MONGODB ATLAS CLOUD STORAGE & REMAINING CAPACITY ENGINE -->
+            <section class="storage-card" id="db-storage-card">
+                <div class="storage-header">
+                    <div class="storage-title-wrap">
+                        <div class="storage-icon-badge">
+                            <svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"/></svg>
+                        </div>
+                        <div>
+                            <h3 style="font-size: 16px; font-weight: 800; color: #ffffff; margin: 0; display: flex; align-items: center; gap: 8px;">
+                                <span>MongoDB Atlas Cloud Storage & Remaining Capacity</span>
+                                <span style="font-size: 10px; background: rgba(16, 185, 129, 0.15); color: var(--green); border: 1px solid rgba(16, 185, 129, 0.3); padding: 2px 8px; border-radius: 4px; font-weight: 700; font-family: 'JetBrains Mono', monospace;">LIVE AT-REST</span>
+                            </h3>
+                            <div style="font-size: 12px; color: var(--text-dark); font-family: 'JetBrains Mono', monospace; margin-top: 2px;">
+                                Central Database Quota & Live Consumption Gauge (Atlas M0 512.0 MB Quota)
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <button onclick="refreshOverview()" class="btn-theme-toggle" style="padding: 5px 12px; font-size: 11px;">
+                            <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                            Live Refresh
+                        </button>
+                    </div>
                 </div>
 
-                <div class="gateway-actions">
-                    <button class="btn-edit-maint" onclick="openEditModal()">
-                        <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" style="display:inline; vertical-align:middle; margin-right:4px;"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-                        Edit Notice
-                    </button>
+                <div class="storage-grid-stats">
+                    <div class="storage-stat-box">
+                        <div class="storage-stat-label">Remaining Storage</div>
+                        <div class="storage-stat-val" id="db-storage-free-mb" style="color: var(--green);">511.4 MB</div>
+                        <div class="storage-stat-sub" id="db-storage-free-pct">99.8% Available Free Space</div>
+                    </div>
 
-                    <div class="switch-container">
-                        <div class="switch-label-state">
-                            <div id="switch-state-text" style="color: var(--green);">SYSTEM ACTIVE</div>
-                            <div style="font-size: 10px; color: var(--text-dark);">PUBLIC ACCESS</div>
-                        </div>
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="master-website-toggle" onchange="toggleWebsiteMaster(this.checked)">
-                            <span class="slider"></span>
-                        </label>
+                    <div class="storage-stat-box">
+                        <div class="storage-stat-label">Used Storage</div>
+                        <div class="storage-stat-val" id="db-storage-used-mb" style="color: var(--cyan);">0.58 MB</div>
+                        <div class="storage-stat-sub" id="db-storage-used-pct">0.2% Total Quota Utilized</div>
+                    </div>
+
+                    <div class="storage-stat-box">
+                        <div class="storage-stat-label">Allocated Cloud Quota</div>
+                        <div class="storage-stat-val" id="db-storage-quota-mb" style="color: #ffffff;">512.0 MB</div>
+                        <div class="storage-stat-sub">Atlas M0 Shared Cluster Limit</div>
+                    </div>
+
+                    <div class="storage-stat-box">
+                        <div class="storage-stat-label">Database Documents</div>
+                        <div class="storage-stat-val" id="db-storage-total-docs" style="color: var(--purple);">0</div>
+                        <div class="storage-stat-sub" id="db-storage-total-colls">Across 0 Collections</div>
+                    </div>
+                </div>
+
+                <div class="storage-progress-container">
+                    <div class="storage-progress-labels">
+                        <span style="color: var(--text-muted); font-size: 11px; text-transform: uppercase;">Cloud Storage Utilization Gauge</span>
+                        <span id="storage-progress-text" style="color: var(--green); font-weight: 700;">0.2% Used (511.4 MB Free)</span>
+                    </div>
+                    <div class="progress-bar-bg" style="height: 10px; border-radius: 5px;">
+                        <div class="progress-bar-fill" id="storage-progress-bar" style="width: 0.2%; background: linear-gradient(90deg, #10b981, #00e5ff);"></div>
+                    </div>
+                </div>
+
+                <div>
+                    <div style="font-size: 11px; text-transform: uppercase; font-weight: 700; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; margin-bottom: 8px;">
+                        Collection Document Breakdown
+                    </div>
+                    <div class="storage-collections-list" id="storage-collections-list">
+                        <!-- Populated by JS -->
                     </div>
                 </div>
             </section>
 
-            <!-- INTERCONNECTED 3-TIER ECOSYSTEM (PUBLIC • ADMIN • SOC) -->
+            <!-- INTERCONNECTED 3-TIER MULTI-SERVER ECOSYSTEM (TOPOLOGY UPGRADE) -->
             <div class="section-header">
                 <h3 class="section-title">
                     <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
                     Interconnected 3-Tier Multi-Server Ecosystem
                 </h3>
-                <span style="font-size: 11px; background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.3); color: var(--cyan); padding: 4px 10px; border-radius: 6px; font-family: 'JetBrains Mono', monospace; font-weight: 700;">SHARED MONGODB CLUSTER</span>
+                <span style="font-size: 11px; background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.3); color: var(--cyan); padding: 4px 10px; border-radius: 6px; font-family: 'JetBrains Mono', monospace; font-weight: 700;">CENTRALIZED ARCHITECTURE</span>
             </div>
 
             <div class="nodes-grid">
@@ -1109,18 +1478,22 @@
                     <div class="node-header">
                         <div class="node-title">
                             <span class="node-dot dot-online" id="node-public-dot"></span>
-                            <span>1. PUBLIC PORTAL</span>
+                            <span>1. PUBLIC PORTAL (TIER 1)</span>
                         </div>
                         <span class="node-badge" id="node-public-badge">ONLINE</span>
                     </div>
-                    <div class="node-desc">Student Exam Results, Verification & Government Schemes</div>
+                    <div class="node-desc">Student Exam Results, Verification, Notices & Public Schemes</div>
                     <div class="node-metric-row">
                         <span class="node-metric-label">Latency</span>
                         <span class="node-metric-val" id="node-public-latency" style="color: var(--green);">0.0 ms</span>
                     </div>
                     <div class="node-metric-row">
-                        <span class="node-metric-label">Gateway Status</span>
-                        <span class="node-metric-val" id="node-public-state">Active Traffic</span>
+                        <span class="node-metric-label">Gateway Traffic</span>
+                        <span class="node-metric-val" id="node-public-state">Active Routing</span>
+                    </div>
+                    <div class="node-metric-row">
+                        <span class="node-metric-label">Service Port</span>
+                        <span class="node-metric-val">:5005 / Render</span>
                     </div>
                     <a href="https://igyr-india-get-your-result.onrender.com" target="_blank" class="node-link" id="node-public-link">Open Public Portal ↗</a>
                 </div>
@@ -1130,32 +1503,61 @@
                     <div class="node-header">
                         <div class="node-title">
                             <span class="node-dot dot-online" id="node-admin-dot"></span>
-                            <span>2. ADMIN PANEL</span>
+                            <span>2. ADMIN PANEL (TIER 2)</span>
                         </div>
                         <span class="node-badge" id="node-admin-badge" style="background: rgba(139, 92, 246, 0.15); color: #c084fc; border-color: rgba(139, 92, 246, 0.4);">OPERATIONAL</span>
                     </div>
-                    <div class="node-desc">Institute Management, Schemes, Applications & Broadcasts</div>
+                    <div class="node-desc">Institute Management, Schemes, Tabulation, Applications & Broadcasts</div>
                     <div class="node-metric-row">
                         <span class="node-metric-label">Latency</span>
                         <span class="node-metric-val" id="node-admin-latency" style="color: var(--purple);">0.0 ms</span>
                     </div>
                     <div class="node-metric-row">
-                        <span class="node-metric-label">Port / Target</span>
-                        <span class="node-metric-val" id="node-admin-target">:5007 / Cloud</span>
+                        <span class="node-metric-label">Login State</span>
+                        <span class="node-metric-val" id="node-admin-login-lock-state" style="color: var(--green);">Unlocked</span>
+                    </div>
+                    <div class="node-metric-row">
+                        <span class="node-metric-label">Service Port</span>
+                        <span class="node-metric-val">:5007 / Render</span>
                     </div>
                     <a href="http://localhost:5007" target="_blank" class="node-link" id="node-admin-link">Open Admin Panel ↗</a>
                 </div>
 
-                <!-- Node 3: SOC Command Center -->
+                <!-- Node 3: MongoDB Atlas Cluster -->
+                <div class="node-card" id="card-node-db">
+                    <div class="node-header">
+                        <div class="node-title">
+                            <span class="node-dot dot-online" id="node-db-dot"></span>
+                            <span>3. MONGODB ATLAS (HUB)</span>
+                        </div>
+                        <span class="node-badge" id="node-db-badge" style="background: rgba(16, 185, 129, 0.15); color: var(--green); border-color: rgba(16, 185, 129, 0.4);">CONNECTED</span>
+                    </div>
+                    <div class="node-desc">Central Document Store, Result Sheets, Tabulations & Audit Logs</div>
+                    <div class="node-metric-row">
+                        <span class="node-metric-label">Storage Remaining</span>
+                        <span class="node-metric-val" id="node-db-remaining" style="color: var(--green);">511.4 MB Free</span>
+                    </div>
+                    <div class="node-metric-row">
+                        <span class="node-metric-label">Cluster Ping</span>
+                        <span class="node-metric-val" id="node-db-latency" style="color: var(--cyan);">0.0 ms</span>
+                    </div>
+                    <div class="node-metric-row">
+                        <span class="node-metric-label">Quota Limit</span>
+                        <span class="node-metric-val">512 MB Max</span>
+                    </div>
+                    <span class="node-link" style="color: var(--green); cursor: default;">Central Data Fabric ✦</span>
+                </div>
+
+                <!-- Node 4: SOC Command Center -->
                 <div class="node-card" id="card-node-soc">
                     <div class="node-header">
                         <div class="node-title">
                             <span class="node-dot dot-online"></span>
-                            <span>3. SOC DEFENCE</span>
+                            <span>4. SOC DEFENCE (TIER 3)</span>
                         </div>
                         <span class="node-badge" style="background: rgba(0, 229, 255, 0.15); color: var(--cyan); border-color: rgba(0, 229, 255, 0.4);">ARMED</span>
                     </div>
-                    <div class="node-desc">Cyber Threat Detection, IP Firewall & Master Traffic Switch</div>
+                    <div class="node-desc">Cyber Threat Detection, IP Quarantine Firewall & Platform Controls</div>
                     <div class="node-metric-row">
                         <span class="node-metric-label">Quarantined IPs</span>
                         <span class="node-metric-val" id="node-soc-banned">0 Active</span>
@@ -1164,7 +1566,11 @@
                         <span class="node-metric-label">Attacks Blocked</span>
                         <span class="node-metric-val" id="node-soc-threats" style="color: var(--cyan);">0 Defended</span>
                     </div>
-                    <span class="node-link" style="color: var(--cyan); cursor: default;">Current Command Node</span>
+                    <div class="node-metric-row">
+                        <span class="node-metric-label">Service Port</span>
+                        <span class="node-metric-val">:5006 / Standalone</span>
+                    </div>
+                    <span class="node-link" style="color: var(--cyan); cursor: default;">Active Command Deck</span>
                 </div>
             </div>
 
@@ -1503,6 +1909,195 @@
             }
         }
 
+        // ==========================================
+        // THEME MANAGEMENT (LIGHT & DARK MODES)
+        // ==========================================
+        function initSocTheme() {
+            const savedTheme = localStorage.getItem('soc_theme') || 'dark';
+            applySocTheme(savedTheme);
+        }
+
+        function toggleSocTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            applySocTheme(newTheme);
+            localStorage.setItem('soc_theme', newTheme);
+            showToast(`SOC Switched to ${newTheme.toUpperCase()} MODE`);
+        }
+
+        function applySocTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            const icon = document.getElementById('theme-toggle-icon');
+            const label = document.getElementById('theme-toggle-text');
+            if (theme === 'light') {
+                if (icon) icon.textContent = '🌙';
+                if (label) label.textContent = 'Dark Mode';
+            } else {
+                if (icon) icon.textContent = '☀️';
+                if (label) label.textContent = 'Light Mode';
+            }
+            if (telemetryChart) {
+                const gridColor = theme === 'light' ? 'rgba(0, 0, 0, 0.08)' : 'rgba(255, 255, 255, 0.05)';
+                const tickColor = theme === 'light' ? '#64748b' : '#94a3b8';
+                telemetryChart.options.scales.x.grid.color = gridColor;
+                telemetryChart.options.scales.x.ticks.color = tickColor;
+                telemetryChart.options.scales.y.grid.color = gridColor;
+                telemetryChart.options.scales.y.ticks.color = tickColor;
+                telemetryChart.update('none');
+            }
+        }
+
+        // ==========================================
+        // SUPER ADMIN LOGIN ACCESS (LOCK / UNLOCK)
+        // ==========================================
+        let isAdminLoginToggling = false;
+
+        async function toggleAdminLoginMaster(newCheckedState) {
+            if (isAdminLoginToggling) return;
+            isAdminLoginToggling = true;
+
+            try {
+                const res = await fetch('/soc/api/toggle-admin-login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-SOC-Token': authToken
+                    },
+                    body: JSON.stringify({ enabled: newCheckedState })
+                });
+                const data = await res.json();
+
+                if (res.ok && data.success) {
+                    applyAdminLoginStateUI(data.admin_login_enabled);
+                    showToast(data.message);
+                } else {
+                    document.getElementById('master-admin-login-toggle').checked = !newCheckedState;
+                    showToast(data.message || 'Failed to toggle Admin Login access');
+                }
+            } catch (err) {
+                document.getElementById('master-admin-login-toggle').checked = !newCheckedState;
+                showToast('Network error updating Admin Login access');
+            } finally {
+                isAdminLoginToggling = false;
+            }
+        }
+
+        function applyAdminLoginStateUI(isEnabled) {
+            const checkbox = document.getElementById('master-admin-login-toggle');
+            const pill = document.getElementById('admin-login-pill');
+            const desc = document.getElementById('admin-login-status-desc');
+            const stateText = document.getElementById('admin-login-state-text');
+            const banner = document.getElementById('admin-login-banner-box');
+            const nodeAdminLock = document.getElementById('node-admin-login-lock-state');
+
+            if (checkbox) checkbox.checked = isEnabled;
+
+            if (isEnabled) {
+                if (pill) {
+                    pill.className = 'gateway-status-pill status-pill-online';
+                    pill.textContent = 'UNLOCKED';
+                }
+                if (desc) {
+                    desc.textContent = 'Super Admin Portal authentication is currently unlocked and accepting credentials. Toggle switch OFF to immediately lock all admin login attempts.';
+                }
+                if (stateText) {
+                    stateText.textContent = 'LOGIN ALLOWED';
+                    stateText.style.color = 'var(--green)';
+                }
+                if (banner) banner.classList.remove('admin-locked');
+                if (nodeAdminLock) {
+                    nodeAdminLock.textContent = 'Unlocked';
+                    nodeAdminLock.style.color = 'var(--green)';
+                }
+            } else {
+                if (pill) {
+                    pill.className = 'gateway-status-pill status-pill-offline';
+                    pill.textContent = 'LOCKED';
+                }
+                if (desc) {
+                    desc.textContent = '🔒 ADMIN LOGIN IS CURRENTLY LOCKED by SOC. Any attempts to authenticate on the Admin Portal (/api/auth/admin) are blocked with 403 Forbidden.';
+                }
+                if (stateText) {
+                    stateText.textContent = 'LOGIN LOCKED';
+                    stateText.style.color = 'var(--red)';
+                }
+                if (banner) banner.classList.add('admin-locked');
+                if (nodeAdminLock) {
+                    nodeAdminLock.textContent = 'Locked (403)';
+                    nodeAdminLock.style.color = 'var(--red)';
+                }
+            }
+        }
+
+        // ==========================================
+        // DATABASE STORAGE CAPACITY ENGINE
+        // ==========================================
+        function renderStorageStats(storage) {
+            if (!storage) return;
+
+            const freeMb = storage.free_mb != null ? storage.free_mb.toFixed(2) : '512.00';
+            const usedMb = storage.used_mb != null ? storage.used_mb.toFixed(2) : '0.00';
+            const quotaMb = storage.quota_mb != null ? storage.quota_mb.toFixed(1) : '512.0';
+            const freePct = storage.free_percent != null ? storage.free_percent.toFixed(1) : '100.0';
+            const usedPct = storage.used_percent != null ? storage.used_percent.toFixed(1) : '0.0';
+            const totalDocs = storage.total_documents || 0;
+            const totalColls = storage.total_collections || 0;
+
+            const elFree = document.getElementById('db-storage-free-mb');
+            if (elFree) elFree.textContent = `${freeMb} MB`;
+
+            const elFreePct = document.getElementById('db-storage-free-pct');
+            if (elFreePct) elFreePct.textContent = `${freePct}% Available Free Space`;
+
+            const elUsed = document.getElementById('db-storage-used-mb');
+            if (elUsed) elUsed.textContent = `${usedMb} MB`;
+
+            const elUsedPct = document.getElementById('db-storage-used-pct');
+            if (elUsedPct) elUsedPct.textContent = `${usedPct}% Total Quota Utilized`;
+
+            const elQuota = document.getElementById('db-storage-quota-mb');
+            if (elQuota) elQuota.textContent = `${quotaMb} MB`;
+
+            const elTotalDocs = document.getElementById('db-storage-total-docs');
+            if (elTotalDocs) elTotalDocs.textContent = totalDocs.toLocaleString();
+
+            const elTotalColls = document.getElementById('db-storage-total-colls');
+            if (elTotalColls) elTotalColls.textContent = `Across ${totalColls} Collections`;
+
+            // Gauge progress bar
+            const bar = document.getElementById('storage-progress-bar');
+            if (bar) {
+                const widthVal = Math.max(parseFloat(usedPct), 0.5);
+                bar.style.width = `${Math.min(widthVal, 100)}%`;
+                if (parseFloat(usedPct) > 85) {
+                    bar.style.background = 'var(--red)';
+                } else if (parseFloat(usedPct) > 60) {
+                    bar.style.background = 'var(--amber)';
+                } else {
+                    bar.style.background = 'linear-gradient(90deg, #10b981, #00e5ff)';
+                }
+            }
+
+            const pText = document.getElementById('storage-progress-text');
+            if (pText) {
+                pText.textContent = `${usedPct}% Used (${freeMb} MB Remaining)`;
+            }
+
+            // Node 3 in topology
+            const nodeDbRem = document.getElementById('node-db-remaining');
+            if (nodeDbRem) nodeDbRem.textContent = `${freeMb} MB Free`;
+
+            // Collections breakdown
+            const collsBox = document.getElementById('storage-collections-list');
+            if (collsBox && storage.collections) {
+                let html = '';
+                for (const [collName, count] of Object.entries(storage.collections)) {
+                    html += `<div class="collection-chip"><span>📁 ${escapeHtml(collName)}:</span><strong>${count.toLocaleString()} docs</strong></div>`;
+                }
+                collsBox.innerHTML = html;
+            }
+        }
+
         // Polling dashboard telemetry
         async function refreshOverview() {
             if (!authToken) return;
@@ -1519,11 +2114,20 @@
                 if (res.ok) {
                     const data = await res.json();
                     renderHealth(data.health, data);
-                    if (!isToggling) {
-                        applyWebsiteStateUI(data.website_control.website_active);
+
+                    if (data.website_control) {
+                        if (!isToggling) {
+                            applyWebsiteStateUI(data.website_control.website_active);
+                        }
+                        if (!isAdminLoginToggling) {
+                            applyAdminLoginStateUI(data.website_control.admin_login_enabled !== false);
+                        }
+                        window.currentMaintInfo = data.website_control;
                     }
-                    // Save for edit modal
-                    window.currentMaintInfo = data.website_control;
+
+                    if (data.storage) {
+                        renderStorageStats(data.storage);
+                    }
                 }
             } catch(e) {
                 console.log("Telemetry poll:", e);
@@ -1686,6 +2290,13 @@
                     const isAdmOk = adm.status.includes('Online');
                     document.getElementById('node-admin-badge').textContent = isAdmOk ? 'ONLINE' : 'STANDBY';
                     document.getElementById('node-admin-dot').className = 'node-dot ' + (isAdmOk ? 'dot-online' : 'dot-offline');
+                }
+
+                // MongoDB Node
+                if (health.database) {
+                    const dbLatText = health.database.latency_ms > 0 ? health.database.latency_ms.toFixed(1) + ' ms' : '0.5 ms';
+                    const nodeDbLat = document.getElementById('node-db-latency');
+                    if (nodeDbLat) nodeDbLat.textContent = dbLatText;
                 }
 
                 // SOC Node
@@ -1923,6 +2534,9 @@
                 refreshFirewall();
             }, 3000);
         }
+
+        // Initialize Theme (Dark/Light mode)
+        initSocTheme();
 
         // Auto-login check on page load
         if (authToken) {
